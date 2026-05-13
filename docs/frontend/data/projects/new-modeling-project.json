@@ -1,0 +1,56 @@
+{
+  "projectId": "new-modeling-project",
+  "name": "新建模项目",
+  "status": "created",
+  "entryView": "created",
+  "time": "刚刚",
+  "summary": "新项目待创建，请填写建模要求并上传数据。",
+  "dataset": {
+    "name": "待上传数据文件",
+    "rows": 12000,
+    "columns": 48,
+    "target": "is_overdue_30d"
+  },
+  "created": {
+    "currentStep": 0,
+    "formDefaults": {
+      "modelingRequirement": "",
+      "experimentRounds": 5,
+      "experimentRoundsInput": "5",
+      "optimizationMetric": "AUC",
+      "optimizationTarget": 0.95,
+      "optimizationTargetInput": "0.95",
+      "validationRatio": 20,
+      "validationRatioInput": "20"
+    },
+    "requirementTemplates": [
+      "请基于客户交易、收入、存款和信用额度数据，建立信用卡逾期风险预测模型，重点识别未来30天可能逾期的高风险客户，并输出可解释的关键影响因素。",
+      "请围绕高风险客户识别、坏账预警和业务可解释性，生成适合风控评审的建模结果。",
+      "请先完成多轮实验，再输出可直接部署的最佳模型与关键特征说明。"
+    ],
+    "validationRules": {
+      "experimentRounds": {
+        "min": 1,
+        "max": 8,
+        "resetTo": 1,
+        "errorMessage": "输入数据超范围"
+      },
+      "validationRatio": {
+        "min": 0,
+        "max": 100,
+        "resetTo": 0,
+        "errorMessage": "输入数据超范围"
+      },
+      "optimizationTarget": {
+        "min": 0,
+        "max": 1,
+        "resetTo": 0,
+        "errorMessage": "输入数据超范围"
+      }
+    },
+    "uploadHints": {
+      "title": "点击上传或拖拽文件到此处",
+      "subtitle": "支持 CSV、Excel、JSON 格式，适合演示和联调"
+    }
+  }
+}

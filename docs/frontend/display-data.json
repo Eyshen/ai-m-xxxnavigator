@@ -1,0 +1,272 @@
+{
+  "projectHistory": [
+    { "id": 1, "name": "信用卡逾期预测模型", "time": "2小时前", "status": "completed" },
+    { "id": 2, "name": "客户流失分析", "time": "昨天", "status": "completed" },
+    { "id": 3, "name": "营销响应率预测", "time": "3天前", "status": "completed" },
+    { "id": 4, "name": "欺诈转账识别实验", "time": "刚刚", "status": "running" },
+    { "id": 5, "name": "新建模项目", "time": "刚刚", "status": "created" }
+  ],
+  "workflowStages": [
+    { "id": 0, "name": "数据接入", "desc": "上传数据并识别字段", "icon": "upload" },
+    { "id": 1, "name": "自动实验", "desc": "多轮假设验证", "icon": "zap" },
+    { "id": 2, "name": "模型交付", "desc": "导出结果和交付物", "icon": "rocket" }
+  ],
+  "productHighlights": [
+    "自动字段识别",
+    "AI 特征推荐",
+    "多模型训练",
+    "闭环验证评估",
+    "一键交付部署"
+  ],
+  "quickRequirementTemplates": [
+    "建立信用风险评分模型，识别未来 30 天高风险客户，并输出可解释的关键影响因素。",
+    "对新增客户做违约倾向预测，优先优化 AUC，并给出特征业务解释和验证集结果。",
+    "面向风控策略评审，生成多轮实验报告，重点展示稳定特征、最佳模型组合和交付文件。"
+  ],
+  "deliveryChecklist": [
+    "训练数据、验证比例和实验配置已固化，可复现实验过程。",
+    "最佳模型、特征解释和实验摘要已整理为交付清单。",
+    "部署演示页可继续接真实下载链接、推理接口和 PDF 报告。"
+  ],
+  "workspaceMetrics": {
+    "columnsDetected": 48,
+    "rowsScanned": 12000,
+    "latestRuntime": "08m 42s"
+  },
+  "deliveryOptions": [
+    { "title": "导出 PMML", "desc": "标准化模型格式", "icon": "fileText" },
+    { "title": "Python 推理代码", "desc": "便于服务化接入", "icon": "fileText" },
+    { "title": "实验报告 PDF", "desc": "适合汇报和评审", "icon": "download" }
+  ],
+  "defaultExperimentLoops": [
+    {
+      "id": 1,
+      "name": "01 Loop",
+      "status": "success",
+      "summary": "基线建模流程跑通，XGBoost 达到可用基准。",
+      "auc": 0.8124,
+      "ks": 0.5532,
+      "components": [
+        {
+          "id": "1-profile",
+          "order": "01",
+          "type": "DataProfile",
+          "status": "success",
+          "hypothesis": "识别字段类型、缺失率和目标变量分布，建立数据质量基线。",
+          "evidence": "数据可训练，目标变量分布稳定。",
+          "metric": "+0.00 AUC"
+        },
+        {
+          "id": "1-model",
+          "order": "02",
+          "type": "Model",
+          "status": "success",
+          "hypothesis": "使用 XGBoost 作为首轮基线模型，快速评估特征可预测性。",
+          "evidence": "AUC 0.8124，显著高于随机基线。",
+          "metric": "+0.00 AUC"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "02 Loop",
+      "status": "failed",
+      "summary": "高阶交叉特征带来噪声，验证集表现下降。",
+      "auc": 0.8068,
+      "ks": 0.541,
+      "components": [
+        {
+          "id": "2-feature",
+          "order": "03",
+          "type": "FeatureEng",
+          "status": "failed",
+          "hypothesis": "引入年龄、收入、交易频次的三阶交叉特征可以提升风险识别。",
+          "evidence": "训练集收益明显，但验证集 AUC 下降，疑似过拟合。",
+          "metric": "-0.56 AUC"
+        },
+        {
+          "id": "2-model",
+          "order": "04",
+          "type": "Model",
+          "status": "success",
+          "hypothesis": "通过正则化参数约束复杂特征影响。",
+          "evidence": "模型训练成功，但无法抵消噪声特征影响。",
+          "metric": "-0.32 AUC"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "03 Loop",
+      "status": "failed",
+      "summary": "营销响应类特征与逾期目标相关性弱。",
+      "auc": 0.8151,
+      "ks": 0.5603,
+      "components": [
+        {
+          "id": "3-feature",
+          "order": "05",
+          "type": "FeatureEng",
+          "status": "failed",
+          "hypothesis": "加入营销触达次数、优惠响应率等行为特征可提升逾期预测。",
+          "evidence": "特征重要性偏低，贡献不稳定。",
+          "metric": "+0.27 AUC"
+        },
+        {
+          "id": "3-workflow",
+          "order": "06",
+          "type": "Workflow",
+          "status": "success",
+          "hypothesis": "保留可复用的数据清洗与训练流程。",
+          "evidence": "流程稳定，可继续复用到下一轮实验。",
+          "metric": "稳定"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "04 Loop",
+      "status": "success",
+      "summary": "额度使用率和收入存款比成为核心有效特征。",
+      "auc": 0.8421,
+      "ks": 0.6037,
+      "components": [
+        {
+          "id": "4-feature",
+          "order": "07",
+          "type": "FeatureEng",
+          "status": "success",
+          "hypothesis": "引入额度使用率、收入存款比和人均存款可以解释客户偿付压力。",
+          "evidence": "三类特征均进入 Top 5，验证集收益稳定。",
+          "metric": "+2.70 AUC"
+        },
+        {
+          "id": "4-model",
+          "order": "08",
+          "type": "Model",
+          "status": "success",
+          "hypothesis": "LightGBM 对稀疏行为特征和比例特征有更好拟合。",
+          "evidence": "AUC 0.8421，KS 0.6037。",
+          "metric": "+2.70 AUC"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "05 Loop",
+      "status": "success",
+      "summary": "集成策略进一步提升稳定性，产出当前最佳模型。",
+      "auc": 0.8542,
+      "ks": 0.6234,
+      "components": [
+        {
+          "id": "5-feature",
+          "order": "09",
+          "type": "FeatureEng",
+          "status": "success",
+          "hypothesis": "筛除不稳定交叉特征，仅保留风控解释一致的衍生特征。",
+          "evidence": "验证集 AUC 提升，特征贡献更集中。",
+          "metric": "+1.21 AUC"
+        },
+        {
+          "id": "5-model",
+          "order": "10",
+          "type": "Model",
+          "status": "success",
+          "hypothesis": "XGBoost 在当前特征集上具备最优排序能力。",
+          "evidence": "AUC 0.8542，KS 0.6234。",
+          "metric": "+1.21 AUC"
+        },
+        {
+          "id": "5-ensemble",
+          "order": "11",
+          "type": "Ensemble",
+          "status": "success",
+          "hypothesis": "融合 XGBoost 和 LightGBM 预测分数可降低单模型波动。",
+          "evidence": "稳定性提升，验证集差异控制在 2% 以内。",
+          "metric": "稳定"
+        }
+      ]
+    }
+  ],
+  "initialAppState": {
+    "currentStep": 0,
+    "uploadedFile": null,
+    "modelingRequirement": "",
+    "requirementSubmitted": false,
+    "experimentRounds": 5,
+    "experimentRoundsInput": "5",
+    "optimizationMetric": "AUC",
+    "optimizationTarget": 0.95,
+    "optimizationTargetInput": "0.95",
+    "validationRatio": 20,
+    "validationRatioInput": "20",
+    "experimentView": "result",
+    "successfulOnly": false,
+    "activeLoopId": 5,
+    "expandedExperimentId": null,
+    "isProcessing": false,
+    "selectedChat": "新建模项目"
+  },
+  "experimentRun": {
+    "runId": "run_20260512_001",
+    "projectId": "credit-risk-demo",
+    "status": "completed",
+    "dataset": {
+      "name": "credit-risk-demo.csv",
+      "rows": 12000,
+      "columns": 48
+    },
+    "prompt": {
+      "goal": "建立信用卡逾期风险预测模型，识别未来 30 天高风险客户。",
+      "systemPrompt": "自动执行多轮实验并输出最佳结果。",
+      "userPrompt": "重点展示关键影响因素和实验过程。"
+    },
+    "config": {
+      "maxLoops": 5,
+      "evaluationMetric": "AUC",
+      "baselineModels": ["xgboost", "lightgbm"]
+    },
+    "steps": [
+      {
+        "stepId": "step_01",
+        "name": "数据校验",
+        "type": "data_check",
+        "status": "success",
+        "summary": "完成缺失值、字段类型和目标字段校验。"
+      },
+      {
+        "stepId": "step_02",
+        "name": "基线建模",
+        "type": "baseline_model",
+        "status": "success",
+        "summary": "使用 XGBoost 生成基线模型，验证集 AUC 为 0.8124。"
+      },
+      {
+        "stepId": "step_03",
+        "name": "特征优化",
+        "type": "feature_iteration",
+        "status": "success",
+        "summary": "加入稳定业务衍生特征，验证集 AUC 提升到 0.8316。"
+      }
+    ],
+    "result": {
+      "bestLoop": "loop_05",
+      "bestMetric": {
+        "name": "AUC",
+        "value": 0.8316
+      },
+      "artifacts": [
+        {
+          "name": "best-model.pkl",
+          "type": "model"
+        },
+        {
+          "name": "feature-importance.png",
+          "type": "chart"
+        }
+      ],
+      "summary": "当前最佳方案为 XGBoost + 稳定业务衍生特征 + 阈值校准。"
+    }
+  }
+}

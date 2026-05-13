@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "name": "01 Loop",
+    "status": "success",
+    "summary": "基线规则与 LightGBM 首轮实验完成，建立了可用基线。",
+    "auc": 0.841,
+    "ks": 0.582,
+    "components": [
+      {
+        "id": "1-profile",
+        "order": "01",
+        "type": "DataProfile",
+        "status": "success",
+        "hypothesis": "完成交易、设备、账户和时间字段的质量验证。",
+        "evidence": "字段完整性满足实验要求，目标变量分布稳定。",
+        "metric": "+0.00 AUC"
+      },
+      {
+        "id": "1-model",
+        "order": "02",
+        "type": "Model",
+        "status": "success",
+        "hypothesis": "使用 LightGBM 作为欺诈识别首轮基线模型。",
+        "evidence": "Validation AUC 达到 0.841，具备继续优化价值。",
+        "metric": "+0.00 AUC"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "02 Loop",
+    "status": "failed",
+    "summary": "夜间时间掩码与新设备登录交叉特征初步尝试失败，需要修复时间字段。",
+    "auc": 0.836,
+    "ks": 0.571,
+    "components": [
+      {
+        "id": "2-feature",
+        "order": "03",
+        "type": "FeatureEng",
+        "status": "failed",
+        "hypothesis": "引入夜间时段与新设备登录交叉特征可降低误报。",
+        "evidence": "时间字段解析失败，无法完成第一轮训练执行。",
+        "metric": "-0.50 AUC"
+      },
+      {
+        "id": "2-fix",
+        "order": "04",
+        "type": "Workflow",
+        "status": "success",
+        "hypothesis": "修复 datetime 转换后可恢复实验执行。",
+        "evidence": "已完成字段转换修复，等待下一轮验证。",
+        "metric": "可训练"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "03 Loop",
+    "status": "success",
+    "summary": "高风险交互特征验证有效，AUC 和 Precision 均明显提升。",
+    "auc": 0.912,
+    "ks": 0.691,
+    "components": [
+      {
+        "id": "3-feature",
+        "order": "05",
+        "type": "FeatureEng",
+        "status": "success",
+        "hypothesis": "构建夜间、新设备与金额倍数的高阶交叉特征可以更精准识别 ATO 欺诈。",
+        "evidence": "AUC 达到 0.912，Feature Importance 排名显著提升。",
+        "metric": "+0.071 AUC"
+      },
+      {
+        "id": "3-model",
+        "order": "06",
+        "type": "Model",
+        "status": "success",
+        "hypothesis": "保留当前特征集继续验证模型收益。",
+        "evidence": "Precision 提升 +0.070，误报率显著下降。",
+        "metric": "+0.070 Precision"
+      }
+    ]
+  }
+]

@@ -1,0 +1,2794 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI建模导航员</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --line: #e5e7eb;
+      --muted: #6b7280;
+      --faint: #9ca3af;
+      --text: #1f2937;
+      --brand: #667eea;
+      --brand-hover: #5568d3;
+      --blue: #3b82f6;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --purple: #8b5cf6;
+      --radius: 8px;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button {
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s, background 0.2s, border-color 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+    svg { display: block; flex-shrink: 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    .app {
+      display: flex;
+      height: 100vh;
+      background: var(--bg);
+    }
+
+    .sidebar {
+      width: 240px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark,
+    .avatar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .logo-text {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .new-chat-wrap { padding: 16px; }
+    .primary-button {
+      padding: 10px 20px;
+      background: var(--brand);
+      color: #ffffff;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .primary-button:hover { background: var(--brand-hover); }
+    .full-button { width: 100%; padding: 12px; }
+    .ghost-button {
+      padding: 8px 12px;
+      background: #f3f4f6;
+      color: #4b5563;
+      border-radius: 6px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .icon-button {
+      padding: 8px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .project-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      color: var(--faint);
+      padding: 12px 8px 8px;
+      font-weight: 500;
+    }
+
+    .chat-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .chat-item:hover { background: #f9fafb; }
+    .chat-item.active { background: #f3f4f6; }
+    .chat-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chat-item.active .chat-name { font-weight: 500; }
+
+    .user-footer {
+      padding: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 14px;
+    }
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .user-role {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .topbar {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    .topbar h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+    }
+    .topbar p {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      background: #ffffff;
+    }
+    .content-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .agent-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .agent-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .agent-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .agent-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .steps-card {
+      background: linear-gradient(180deg, #fbfcff 0%, #f7f9fd 100%);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 20px;
+      border: 1px solid #e7ebf3;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    }
+    .steps-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .steps-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .steps-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .steps-note {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .steps-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .steps-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+      width: 100%;
+    }
+    .steps-grid::before {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      top: 20px;
+      height: 2px;
+      background: #dde3ef;
+      z-index: 0;
+    }
+    .step-node {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: rgba(255, 255, 255, 0.92);
+      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+      text-align: left;
+    }
+    .step-node.disabled {
+      background: rgba(248, 250, 252, 0.95);
+      border-color: #edf2f7;
+    }
+    .step-node.current {
+      border-color: rgba(102, 126, 234, 0.28);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.12);
+    }
+    .step-node.done {
+      background: linear-gradient(180deg, #ffffff 0%, #f3fff8 100%);
+      border-color: #bbf7d0;
+    }
+    .step-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .step-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+    .step-icon-box.active { background: var(--brand); }
+    .step-icon-box.done { background: var(--green); }
+    .step-copy {
+      min-width: 0;
+      flex: 1;
+    }
+    .step-index {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .step-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .step-label.active {
+      color: var(--brand);
+    }
+    .step-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .step-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: auto;
+    }
+    .step-percent {
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+    }
+    .step-status {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .progress {
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #10b981 100%);
+      transition: width 0.5s ease;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .status-badge.pending {
+      background: #f8fafc;
+      color: #64748b;
+      border-color: #e5e7eb;
+    }
+    .status-badge.process {
+      background: #eff6ff;
+      color: #1e40af;
+      border-color: #bfdbfe;
+    }
+    .status-badge.success {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+    .phase-banner {
+      padding: 16px 18px;
+      border: 1px solid #e7ebf3;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f8fbff 0%, #ffffff 58%, #f5fff8 100%);
+      margin-bottom: 16px;
+    }
+    .phase-banner-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .phase-banner-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .phase-banner-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .phase-banner-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 680px;
+    }
+    .phase-banner-percent {
+      min-width: 92px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(102, 126, 234, 0.18);
+      text-align: right;
+      box-shadow: 0 8px 18px rgba(99, 102, 241, 0.08);
+    }
+    .phase-banner-percent strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .phase-banner-percent span {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .phase-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .phase-metric {
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid #e5e7eb;
+    }
+    .phase-metric-label {
+      font-size: 11px;
+      color: var(--faint);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .phase-metric-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .card + .card { margin-top: 16px; }
+    .card-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .card-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+    .card-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+    .card-body { padding: 20px; }
+
+    .dropzone {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, #fafcff 0%, #ffffff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--brand);
+      background: #f0f2ff;
+    }
+    .dropzone.validation:hover,
+    .dropzone.validation.dragover {
+      border-color: #ca8a04;
+      background: #fefce8;
+    }
+    .dropzone input { display: none; }
+    .dropzone > svg {
+      margin: 0 auto;
+    }
+    .drop-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin: 12px 0 4px;
+    }
+    .drop-subtitle {
+      font-size: 12px;
+      color: var(--faint);
+    }
+
+    .ingest-layout {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .requirement-panel { grid-column: span 7; }
+    .config-panel { grid-column: span 5; }
+    .upload-panel { grid-column: 1 / -1; }
+    .requirement-dialog,
+    .experiment-config,
+    .upload-stage-card {
+      padding: 18px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+    .requirement-dialog {
+      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-lead {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+    }
+    .requirement-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .requirement-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .panel-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .requirement-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .requirement-hint {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .requirement-textarea {
+      width: 100%;
+      min-height: 142px;
+      resize: vertical;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      outline: none;
+    }
+    .requirement-textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    }
+    .requirement-example {
+      font-size: 12px;
+      color: var(--faint);
+      line-height: 1.5;
+    }
+    .requirement-confirmed {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      color: #166534;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .config-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .config-header-lead {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+    }
+    .config-icon-wrap {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(102, 126, 234, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .config-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .config-title-text {
+      line-height: 1.3;
+    }
+    .config-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .metric-target-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(128px, 160px);
+      gap: 12px;
+    }
+    .config-inline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .config-field {
+      min-width: 0;
+    }
+    .config-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 6px;
+    }
+    .config-input,
+    .config-select {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0 12px;
+      background: #ffffff;
+      color: var(--text);
+      outline: none;
+    }
+    .config-input:focus,
+    .config-select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    }
+    .config-input.invalid,
+    .config-select.invalid {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+      background: #fffdf6;
+    }
+    .input-suffix {
+      position: relative;
+    }
+    .input-suffix .config-input {
+      padding-right: 44px;
+    }
+    .input-suffix span {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .field-meta {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .field-hint,
+    .field-error {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .field-hint { color: var(--faint); }
+    .field-error {
+      color: #b45309;
+      font-weight: 600;
+    }
+    .config-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .loading-box {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #1e40af;
+      font-weight: 500;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #93c5fd;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .suggestion {
+      padding: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .suggestion-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .suggestion-text {
+      font-size: 13px;
+      color: #4b5563;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .inline-code {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .button-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .secondary-button {
+      padding: 8px 16px;
+      background: #f3f4f6;
+      color: #4b5563;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .small-primary {
+      padding: 8px 16px;
+      background: var(--brand);
+      color: #ffffff;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .small-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .small-primary:disabled:hover {
+      opacity: 0.55;
+      transform: none;
+    }
+
+    .upload-stage-card {
+      display: grid;
+      gap: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+    }
+    .upload-status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .micro-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #e5e7eb;
+    }
+    .micro-pill.success {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+    .submit-requirement-footer {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .submit-step-hint {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .features-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .features-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .feature-card {
+      padding: 16px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .feature-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .feature-head h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill.green {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .pill.blue {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+    .formula {
+      display: block;
+      background: #1f2937;
+      color: #fbbf24;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+    .actions-right {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .experiment-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .segmented {
+      display: inline-flex;
+      padding: 4px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      gap: 4px;
+    }
+    .segmented button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .segmented button.active {
+      background: linear-gradient(135deg, #667eea 0%, #8b5cf6 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(102, 126, 234, 0.22);
+    }
+    .experiment-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .switch-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #4b5563;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .switch {
+      width: 38px;
+      height: 22px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .switch::after {
+      content: "";
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+      transition: transform 0.2s;
+    }
+    .switch.on {
+      background: var(--brand);
+    }
+    .switch.on::after {
+      transform: translateX(16px);
+    }
+    .experiment-summary {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      margin-bottom: 16px;
+    }
+    .experiment-summary-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .experiment-summary-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .summary-chip-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .summary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .loop-progress-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .loop-progress-chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+    }
+    .loop-progress-chip.success {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+    .loop-progress-chip.failed {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fdba74;
+    }
+    .loop-progress-chip.active {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+      color: #1d4ed8;
+    }
+    .experiment-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 16px;
+    }
+    .loop-rail {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .loop-rail-header {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .loop-item {
+      width: 100%;
+      padding: 14px 12px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text);
+      text-align: left;
+    }
+    .loop-item:last-child { border-bottom: none; }
+    .loop-item.active {
+      background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+    }
+    .loop-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .loop-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .loop-score {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .status-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid currentColor;
+    }
+    .status-dot.success { color: #16a34a; background: #f0fdf4; }
+    .status-dot.failed { color: #dc2626; background: #fef2f2; }
+    .experiment-panel {
+      min-width: 0;
+    }
+    .experiment-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .mini-metric {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+    }
+    .mini-metric .label {
+      font-size: 11px;
+      color: var(--faint);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .mini-metric .value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .process-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .process-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      display: grid;
+      grid-template-columns: 64px 112px 1fr 88px;
+      gap: 14px;
+      align-items: start;
+    }
+    .process-order {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .process-type {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .process-copy {
+      font-size: 13px;
+      color: #4b5563;
+      line-height: 1.55;
+    }
+    .status-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .status-pill.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-pill.failed { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .result-table {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .result-row {
+      display: grid;
+      grid-template-columns: 64px 96px 96px minmax(0, 1.2fr) minmax(0, 1.2fr) 48px 100px;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .result-deploy-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .result-deploy-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row.header {
+      background: #f9fafb;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .result-cell-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .result-copy {
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .expand-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #eef2ff;
+      color: #3730a3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 500;
+    }
+    .experiment-detail {
+      grid-column: 1 / -1;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .model-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .model-row {
+      padding: 14px 16px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .model-row.best {
+      background: #eff6ff;
+      border-color: var(--blue);
+    }
+    .model-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .model-row.best .model-name { font-weight: 600; }
+    .model-score {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .success-note {
+      padding: 12px 16px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #166534;
+      font-weight: 500;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      padding: 16px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .metric-label {
+      font-size: 11px;
+      color: var(--faint);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .info-box {
+      padding: 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .info-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e40af;
+    }
+    .info-box p {
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .panel-box {
+      padding: 16px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .panel-box h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+    .importance-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .importance-row-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+    .importance-name { font-weight: 500; }
+    .importance-value {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .bar-track {
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: #9ca3af;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .bar-fill.best { background: var(--blue); }
+
+    .validation-header {
+      background: #fefce8;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .validation-title,
+    .result-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .validation-title h3,
+    .result-title h3 { margin: 0; }
+    .uploaded-row {
+      padding: 12px 16px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .uploaded-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #166534;
+      font-weight: 500;
+      min-width: 0;
+    }
+    .thin-button {
+      padding: 4px 12px;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .result-header { background: #f0fdf4; }
+    .stability {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+    }
+    .stability-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e40af;
+    }
+    .stability-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .tiny-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .stability-number {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .stability p {
+      font-size: 12px;
+      color: #1e40af;
+      margin: 12px 0 0 0;
+      line-height: 1.5;
+    }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .matrix-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 8px;
+      text-align: center;
+    }
+    .matrix-label.left { text-align: left; }
+    .matrix-cell {
+      padding: 16px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .matrix-cell .name {
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .matrix-cell .num {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .cell-tp { background: #dcfce7; color: #16a34a; }
+    .cell-tp .name { color: #166534; }
+    .cell-fn { background: #fee2e2; color: #dc2626; }
+    .cell-fn .name { color: #991b1b; }
+    .cell-fp { background: #fef3c7; color: #f59e0b; }
+    .cell-fp .name { color: #92400e; }
+    .cell-tn { background: #dbeafe; color: #3b82f6; }
+    .cell-tn .name { color: #1e40af; }
+    .matrix-footer {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .segment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .segment-card {
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .segment-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .segment-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .segment-count {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .segment-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .deploy-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .deploy-option {
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .deploy-option:hover {
+      background: #eff6ff;
+      border-color: var(--blue);
+    }
+    .deploy-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 8px 0 4px;
+    }
+    .deploy-desc {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .ready-box {
+      padding: 18px;
+      background: linear-gradient(135deg, #f0fdf4 0%, #f8fffb 100%);
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      text-align: center;
+      color: #166534;
+    }
+    .ready-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 8px 0 4px;
+    }
+    .ready-desc { font-size: 13px; }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 820px) {
+      body { overflow: auto; }
+      .app { min-height: 100vh; height: auto; }
+      .sidebar { display: none; }
+      .content { padding: 16px; }
+      .phase-metrics,
+      .deploy-grid,
+      .experiment-summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .experiment-layout { grid-template-columns: 1fr; }
+      .loop-rail { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .loop-rail-header { grid-column: 1 / -1; }
+      .process-card,
+      .result-row { grid-template-columns: 1fr; }
+      .topbar { padding: 14px 16px; }
+      .ghost-button span { display: none; }
+      .ingest-layout { grid-template-columns: 1fr; }
+      .requirement-panel,
+      .config-panel,
+      .upload-panel { grid-column: 1 / -1; }
+      .metric-target-row,
+      .config-inline { grid-template-columns: 1fr; }
+      .submit-requirement-footer,
+      .phase-banner-top,
+      .steps-top { flex-direction: column; align-items: stretch; }
+      .steps-meta { justify-content: flex-start; }
+      .matrix-grid { grid-template-columns: 86px 1fr 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+      .steps-grid::before { display: none; }
+      .phase-metrics,
+      .deploy-grid,
+      .experiment-summary-grid,
+      .stability-grid,
+      .segment-grid,
+      .matrix-footer { grid-template-columns: 1fr; }
+      .model-row,
+      .uploaded-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .matrix-grid {
+        grid-template-columns: 1fr;
+      }
+      .matrix-label:empty { display: none; }
+      .matrix-label { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app"></div>
+
+  <script>
+    const state = {
+      currentStep: 0,
+      uploadedFile: null,
+      modelingRequirement: "",
+      requirementSubmitted: false,
+      experimentRounds: 5,
+      experimentRoundsInput: "5",
+      optimizationMetric: "AUC",
+      optimizationTarget: 0.95,
+      optimizationTargetInput: "0.95",
+      validationRatio: 20,
+      validationRatioInput: "20",
+      experimentView: "result",
+      successfulOnly: false,
+      activeLoopId: 5,
+      expandedExperimentId: null,
+      experimentLoops: [],
+      isProcessing: false,
+      selectedChat: "新建模项目"
+    };
+
+    const optimizationMetrics = ["AUC", "KS", "F1 Score", "Accuracy", "Recall"];
+    const metricPlaceholders = {
+      "AUC": "0.95",
+      "KS": "0.42",
+      "F1 Score": "0.88",
+      "Accuracy": "0.90",
+      "Recall": "0.85"
+    };
+
+    const chatHistory = [
+      { id: 1, name: "信用卡逾期预测模型", time: "2小时前", status: "completed" },
+      { id: 2, name: "客户流失分析", time: "昨天", status: "completed" },
+      { id: 3, name: "营销响应率预测", time: "3天前", status: "completed" },
+      { id: 4, name: "新建模项目", time: "刚刚", status: "active" }
+    ];
+
+    const steps = [
+      { id: 0, name: "数据接入", desc: "上传数据并识别字段", icon: "upload" },
+      { id: 1, name: "自动实验", desc: "多轮假设验证", icon: "zap" },
+      { id: 2, name: "模型部署", desc: "一键交付上线", icon: "rocket" }
+    ];
+
+    const defaultExperimentLoops = [
+      {
+        id: 1,
+        name: "01 Loop",
+        status: "success",
+        summary: "基线建模流程跑通，XGBoost 达到可用基准。",
+        auc: 0.8124,
+        ks: 0.5532,
+        components: [
+          { id: "1-profile", order: "01", type: "DataProfile", status: "success", hypothesis: "识别字段类型、缺失率和目标变量分布，建立数据质量基线。", evidence: "数据可训练，目标变量分布稳定。", metric: "+0.00 AUC" },
+          { id: "1-model", order: "02", type: "Model", status: "success", hypothesis: "使用 XGBoost 作为首轮基线模型，快速评估特征可预测性。", evidence: "AUC 0.8124，显著高于随机基线。", metric: "+0.00 AUC" }
+        ]
+      },
+      {
+        id: 2,
+        name: "02 Loop",
+        status: "failed",
+        summary: "高阶交叉特征带来噪声，验证集表现下降。",
+        auc: 0.8068,
+        ks: 0.5410,
+        components: [
+          { id: "2-feature", order: "03", type: "FeatureEng", status: "failed", hypothesis: "引入年龄、收入、交易频次的三阶交叉特征可以提升风险识别。", evidence: "训练集收益明显，但验证集 AUC 下降，疑似过拟合。", metric: "-0.56 AUC" },
+          { id: "2-model", order: "04", type: "Model", status: "success", hypothesis: "通过正则化参数约束复杂特征影响。", evidence: "模型训练成功，但无法抵消噪声特征影响。", metric: "-0.32 AUC" }
+        ]
+      },
+      {
+        id: 3,
+        name: "03 Loop",
+        status: "failed",
+        summary: "营销响应类特征与逾期目标相关性弱。",
+        auc: 0.8151,
+        ks: 0.5603,
+        components: [
+          { id: "3-feature", order: "05", type: "FeatureEng", status: "failed", hypothesis: "加入营销触达次数、优惠响应率等行为特征可提升逾期预测。", evidence: "特征重要性偏低，贡献不稳定。", metric: "+0.27 AUC" },
+          { id: "3-workflow", order: "06", type: "Workflow", status: "success", hypothesis: "保留可复用的数据清洗与训练流程。", evidence: "流程稳定，可继续复用到下一轮实验。", metric: "稳定" }
+        ]
+      },
+      {
+        id: 4,
+        name: "04 Loop",
+        status: "success",
+        summary: "额度使用率和收入存款比成为核心有效特征。",
+        auc: 0.8421,
+        ks: 0.6037,
+        components: [
+          { id: "4-feature", order: "07", type: "FeatureEng", status: "success", hypothesis: "引入额度使用率、收入存款比和人均存款可以解释客户偿付压力。", evidence: "三类特征均进入 Top 5，验证集收益稳定。", metric: "+2.70 AUC" },
+          { id: "4-model", order: "08", type: "Model", status: "success", hypothesis: "LightGBM 对稀疏行为特征和比例特征有更好拟合。", evidence: "AUC 0.8421，KS 0.6037。", metric: "+2.70 AUC" }
+        ]
+      },
+      {
+        id: 5,
+        name: "05 Loop",
+        status: "success",
+        summary: "集成策略进一步提升稳定性，产出当前最佳模型。",
+        auc: 0.8542,
+        ks: 0.6234,
+        components: [
+          { id: "5-feature", order: "09", type: "FeatureEng", status: "success", hypothesis: "筛除不稳定交叉特征，仅保留风控解释一致的衍生特征。", evidence: "验证集 AUC 提升，特征贡献更集中。", metric: "+1.21 AUC" },
+          { id: "5-model", order: "10", type: "Model", status: "success", hypothesis: "XGBoost 在当前特征集上具备最优排序能力。", evidence: "AUC 0.8542，KS 0.6234。", metric: "+1.21 AUC" },
+          { id: "5-ensemble", order: "11", type: "Ensemble", status: "success", hypothesis: "融合 XGBoost 和 LightGBM 预测分数可降低单模型波动。", evidence: "稳定性提升，验证集差异控制在 2% 以内。", metric: "稳定" }
+        ]
+      }
+    ];
+
+    state.experimentLoops = cloneExperiments(defaultExperimentLoops);
+
+    const iconPaths = {
+      upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+      brain: '<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/>',
+      zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+      fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+      rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22 22 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+      chevronRight: '<path d="m9 18 6-6-6-6"/>',
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      alertCircle: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+      trendingUp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+      barChart3: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+      sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
+      settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+      database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>',
+      plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+      menu: '<path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/>',
+      x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      messageSquare: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+      clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+      play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+      download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'
+    };
+
+    function icon(name, size = 20, color = "currentColor", strokeWidth = 2) {
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[name] || ""}</svg>`;
+    }
+
+    function setState(patch) {
+      Object.assign(state, patch);
+      render();
+    }
+
+    function htmlEscape(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function cloneExperiments(loops) {
+      return loops.map(loop => ({
+        ...loop,
+        components: loop.components.map(component => ({ ...component }))
+      }));
+    }
+
+    function activeLoop() {
+      return state.experimentLoops.find(loop => loop.id === state.activeLoopId) || state.experimentLoops[state.experimentLoops.length - 1];
+    }
+
+    function validationErrors() {
+      const errors = {};
+      const roundsRaw = String(state.experimentRoundsInput ?? "").trim();
+      const roundsNum = Number(roundsRaw);
+      if (!roundsRaw) {
+        errors.experimentRounds = "请输入 1 到 8 之间的整数轮次。";
+      } else if (!Number.isInteger(roundsNum) || roundsNum < 1 || roundsNum > 8) {
+        errors.experimentRounds = "请输入 1 到 8 之间的整数轮次。";
+      }
+
+      const ratioRaw = String(state.validationRatioInput ?? "").trim();
+      const ratioNum = Number(ratioRaw);
+      if (!ratioRaw) {
+        errors.validationRatio = "请输入 5 到 100 之间的数值，系统将显示为百分比。";
+      } else if (!Number.isFinite(ratioNum) || ratioNum < 5 || ratioNum > 100) {
+        errors.validationRatio = "请输入 5 到 100 之间的数值，系统将显示为百分比。";
+      }
+
+      const targetRaw = String(state.optimizationTargetInput ?? "").trim();
+      const targetNum = Number(targetRaw);
+      if (!targetRaw) {
+        errors.optimizationTarget = "目标值需在 0 到 1 之间，例如 0.95。";
+      } else if (!Number.isFinite(targetNum) || targetNum < 0 || targetNum > 1) {
+        errors.optimizationTarget = "目标值需在 0 到 1 之间，例如 0.95。";
+      }
+
+      return errors;
+    }
+
+    function isConfigValid() {
+      const errors = validationErrors();
+      return !errors.experimentRounds && !errors.validationRatio && !errors.optimizationTarget;
+    }
+
+    function formatMetricTarget() {
+      return Number(state.optimizationTarget).toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function stageProgress() {
+      const configDone = isConfigValid();
+      const hasRequirement = Boolean(state.modelingRequirement.trim());
+      const hasFile = Boolean(state.uploadedFile);
+      const parsed = hasFile && !state.isProcessing;
+      const loops = state.experimentLoops.length;
+      const active = activeLoop();
+      const successCount = state.experimentLoops.filter(loop => loop.status === "success").length;
+      const deployReady = state.currentStep >= 2;
+
+      return [
+        {
+          id: 0,
+          percent: parsed && configDone ? (hasRequirement ? 100 : 85) : hasFile || hasRequirement ? 55 : 20,
+          statusText: parsed ? (hasRequirement ? "已就绪" : "待提交需求") : hasFile ? "正在解析" : "待上传",
+          badge: parsed ? (hasRequirement ? "success" : "process") : hasFile ? "process" : "pending"
+        },
+        {
+          id: 1,
+          percent: state.currentStep === 0 ? 0 : Math.min(100, Math.round((loops / Math.max(1, Number(state.experimentRounds) || 1)) * 100)),
+          statusText: state.currentStep === 0 ? "未开始" : `已完成 ${loops} 轮`,
+          badge: state.currentStep > 1 ? "success" : state.currentStep === 1 ? "process" : "pending",
+          successCount
+        },
+        {
+          id: 2,
+          percent: deployReady ? 100 : state.currentStep >= 1 ? 68 : 0,
+          statusText: deployReady ? "可交付" : state.currentStep >= 1 ? "等待确认" : "未开始",
+          badge: deployReady ? "success" : state.currentStep >= 1 ? "process" : "pending",
+          activeModel: active?.name || "05 Loop"
+        }
+      ];
+    }
+
+    function progressWidth(value) {
+      return Math.max(0, Math.min(100, value));
+    }
+
+    function currentPhaseSummary() {
+      const progress = stageProgress();
+      const current = progress[state.currentStep];
+      if (state.currentStep === 0) {
+        return {
+          kicker: "阶段 1 / 数据接入",
+          title: "先明确建模要求，再完成自动实验配置与文件上传",
+          desc: "保持数据与展示内容不变的前提下，先完成需求描述、实验配置和上传解析，系统会在解析完成后进入自动实验。",
+          percent: current.percent,
+          metrics: [
+            { label: "建模要求", value: state.modelingRequirement.trim() ? "已填写" : "待填写" },
+            { label: "自动实验配置", value: isConfigValid() ? "已完成" : "待校验" },
+            { label: "文件上传", value: state.uploadedFile ? (state.isProcessing ? "解析中" : "已上传") : "待上传" },
+            { label: "提交状态", value: state.uploadedFile && !state.isProcessing && isConfigValid() ? "可提交" : "待准备" }
+          ]
+        };
+      }
+      if (state.currentStep === 1) {
+        const best = state.experimentLoops.reduce((winner, loop) => loop.auc > winner.auc ? loop : winner, state.experimentLoops[0]);
+        return {
+          kicker: "阶段 2 / 自动实验",
+          title: "多轮实验正在沉淀成功假设，进度与结果同步可见",
+          desc: "保留现有实验数据与内容，强化每轮实验的完成度感知、成功率和最佳结果的识别，帮助更快确认当前最佳方案。",
+          percent: current.percent,
+          metrics: [
+            { label: "实验轮次", value: `${state.experimentLoops.length}/${state.experimentRounds}` },
+            { label: "成功 Loop", value: `${current.successCount || 0}` },
+            { label: `最佳 ${state.optimizationMetric}`, value: best.auc.toFixed(4) },
+            { label: "部署候选", value: best.name }
+          ]
+        };
+      }
+      return {
+        kicker: "阶段 3 / 模型部署",
+        title: "模型交付已就绪，聚焦最终导出与上线交接",
+        desc: "在自动实验完成后直接突出交付状态和可用输出，保留原有交付内容，但让“当前最佳模型已准备好”更直观。",
+        percent: current.percent,
+        metrics: [
+          { label: "最佳方案", value: current.activeModel || "05 Loop" },
+          { label: "目标指标", value: `${state.optimizationMetric} ${formatMetricTarget()}` },
+          { label: "验证比例", value: `${state.validationRatio}%` },
+          { label: "交付状态", value: "已准备就绪" }
+        ]
+      };
+    }
+
+    function experimentRows() {
+      const rows = state.experimentLoops.flatMap(loop => loop.components.map(component => ({ loop, component })));
+      return state.successfulOnly ? rows.filter(row => row.component.status === "success") : rows;
+    }
+
+    function createNextLoop() {
+      return createGeneratedLoop(state.experimentLoops.length + 1);
+    }
+
+    function configuredExperimentLoops() {
+      const count = Math.max(1, Math.min(8, Number(state.experimentRounds) || 5));
+      const loops = cloneExperiments(defaultExperimentLoops.slice(0, Math.min(count, defaultExperimentLoops.length)));
+      while (loops.length < count) {
+        loops.push(createGeneratedLoop(loops.length + 1));
+      }
+      return loops;
+    }
+
+    function createGeneratedLoop(id) {
+      const padded = String(id).padStart(2, "0");
+      const isSuccess = id % 3 !== 0;
+      const auc = isSuccess ? 0.8542 + (id - 5) * 0.0021 : 0.8460 - id * 0.0006;
+      return {
+        id,
+        name: `${padded} Loop`,
+        status: isSuccess ? "success" : "failed",
+        summary: isSuccess
+          ? "新增实验验证了稳定特征筛选和阈值校准策略，模型排序能力小幅提升。"
+          : "新增实验尝试更激进的组合特征，但验证集收益不足，已记录为排除项。",
+        auc,
+        ks: isSuccess ? 0.6234 + (id - 5) * 0.004 : 0.5980,
+        components: [
+          {
+            id: `${id}-feature`,
+            order: String(id * 2).padStart(2, "0"),
+            type: "FeatureEng",
+            status: isSuccess ? "success" : "failed",
+            hypothesis: isSuccess
+              ? "基于成功假设继续筛选稳定业务特征，并移除低贡献字段。"
+              : "尝试加入更复杂的高阶交叉特征以捕捉非线性风险模式。",
+            evidence: isSuccess
+              ? "验证集 AUC 小幅提升，特征解释保持一致。"
+              : "训练集提升但验证集波动扩大，泛化收益不足。",
+            metric: isSuccess ? "+0.21 AUC" : "-0.82 AUC"
+          },
+          {
+            id: `${id}-model`,
+            order: String(id * 2 + 1).padStart(2, "0"),
+            type: isSuccess ? "Workflow" : "Model",
+            status: "success",
+            hypothesis: isSuccess
+              ? "将成功特征固化进可复用建模工作流，作为后续部署输入。"
+              : "使用更强正则化约束复杂特征对模型的影响。",
+            evidence: isSuccess
+              ? "工作流执行成功，可进入报告分析和部署交付。"
+              : "训练可完成，但整体方案不进入最终推荐。", 
+            metric: isSuccess ? "稳定" : "可训练"
+          }
+        ]
+      };
+    }
+
+    function sidebarTemplate() {
+      return `
+        <aside class="sidebar">
+          <div class="logo">
+            <div class="logo-mark">${icon("sparkles", 20, "#fff")}</div>
+            <span class="logo-text">AI建模导航员</span>
+          </div>
+          <div class="new-chat-wrap">
+            <button class="primary-button full-button" data-action="new-chat">${icon("plus", 18, "#fff")}新对话</button>
+          </div>
+          <div class="project-list">
+            <div class="section-label">我的项目</div>
+            ${chatHistory.map(chat => `
+              <div class="chat-item ${state.selectedChat === chat.name ? "active" : ""}" data-chat="${htmlEscape(chat.name)}">
+                ${icon("messageSquare", 16, "#6b7280")}
+                <div class="chat-name">${chat.name}</div>
+              </div>
+            `).join("")}
+          </div>
+          <div class="user-footer">
+            <div class="avatar">用</div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="user-name">用户</div>
+              <div class="user-role">体验创新</div>
+            </div>
+          </div>
+        </aside>
+      `;
+    }
+
+    function topbarTemplate() {
+      return `
+        <header class="topbar">
+          <div>
+            <h2>${state.selectedChat}</h2>
+            <p>从数据上传到模型交付的一站式自动化建模</p>
+          </div>
+        </header>
+      `;
+    }
+
+    function phaseBannerTemplate() {
+      const summary = currentPhaseSummary();
+      return `
+        <div class="phase-banner">
+          <div class="phase-banner-top">
+            <div>
+              <div class="phase-banner-kicker">${summary.kicker}</div>
+              <div class="phase-banner-title">${summary.title}</div>
+              <div class="phase-banner-desc">${summary.desc}</div>
+            </div>
+            <div class="phase-banner-percent">
+              <strong>${summary.percent}%</strong>
+              <span>当前完成度</span>
+            </div>
+          </div>
+          <div class="phase-metrics">
+            ${summary.metrics.map(metric => `
+              <div class="phase-metric">
+                <div class="phase-metric-label">${metric.label}</div>
+                <div class="phase-metric-value">${metric.value}</div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function stepsTemplate() {
+      const progress = stageProgress();
+      const overall = Math.round(progress.reduce((sum, item) => sum + item.percent, 0) / progress.length);
+      return `
+        <div class="steps-card">
+          <div class="steps-top">
+            <div>
+              <div class="steps-kicker">Model Journey</div>
+              <div class="steps-title">数据接入、自动实验、模型部署三阶段协同推进</div>
+              <div class="steps-note">突出阶段完成度与下一步动作，但压缩整体屏幕占比，避免导航区域抢占内容空间。</div>
+            </div>
+            <div class="steps-meta">
+              <span class="status-badge ${progress[state.currentStep].badge}">${icon(progress[state.currentStep].badge === "success" ? "check" : progress[state.currentStep].badge === "process" ? "clock" : "alertCircle", 14, "currentColor")}${progress[state.currentStep].statusText}</span>
+              <span class="status-badge pending">${overall}% 总进度</span>
+            </div>
+          </div>
+          <div class="steps-grid">
+            ${steps.map((step, index) => {
+              const isActive = state.currentStep === step.id;
+              const isDone = state.currentStep > step.id;
+              const phase = progress[index];
+              return `
+                <div class="step-node ${state.currentStep < step.id ? "disabled" : ""} ${isDone ? "done" : ""} ${isActive ? "current" : ""}">
+                  <div class="step-head">
+                    <div class="step-icon-box ${isDone ? "done" : ""} ${isActive ? "active" : ""}">
+                      ${isDone ? icon("check", 22, "#fff", 2.5) : icon(step.icon, 22, isActive ? "#fff" : "#9ca3af")}
+                    </div>
+                    <div class="step-copy">
+                      <div class="step-index">Stage 0${index + 1}</div>
+                      <div class="step-label ${isActive ? "active" : ""}">${step.name}</div>
+                      <div class="step-desc">${step.desc}</div>
+                    </div>
+                  </div>
+                  <div class="step-meta">
+                    <span class="step-percent">${phase.percent}%</span>
+                    <span class="step-status">${phase.statusText}</span>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: ${overall}%"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function uploadStepTemplate() {
+      const errors = validationErrors();
+      const uploadReady = state.uploadedFile && !state.isProcessing;
+      const requirementReady = Boolean(state.modelingRequirement.trim());
+      return `
+        <div class="card">
+          <div class="card-header">
+            <h3>1. 数据接入与智能感知</h3>
+            <p>上传您的数据文件，系统将自动识别字段类型和业务含义</p>
+          </div>
+          <div class="card-body">
+            <div class="ingest-layout">
+              <div class="requirement-panel">
+                <div class="requirement-dialog">
+                  <div class="panel-head">
+                    <div class="panel-lead">
+                      <div class="requirement-avatar">${icon("messageSquare", 18, "#fff")}</div>
+                      <div class="requirement-content">
+                        <div class="panel-eyebrow">必须优先完成</div>
+                        <div class="requirement-title">请先描述本次建模要求</div>
+                        <div class="requirement-hint">用自然语言说明你希望预测什么、目标人群是谁、关注哪些业务指标或约束条件，Data Agent 会结合上传数据理解建模目标。</div>
+                      </div>
+                    </div>
+                    <span class="status-badge ${requirementReady ? "success" : "pending"}">${requirementReady ? "已填写" : "待填写"}</span>
+                  </div>
+                  <textarea
+                    class="requirement-textarea"
+                    id="modeling-requirement"
+                    placeholder="例如：请基于客户交易、收入、存款和信用额度数据，建立信用卡逾期风险预测模型，重点识别未来30天可能逾期的高风险客户，并输出可解释的关键影响因素。"
+                  >${htmlEscape(state.modelingRequirement)}</textarea>
+                  <div class="requirement-example">建议包含：预测目标、样本范围、业务口径、评估指标、交付形式。</div>
+                  ${uploadReady ? `<div class="requirement-confirmed">✓ 数据文件已解析就绪，请确认或补充建模要求后，在下方点击「提交需求」开始自动实验。</div>` : ""}
+                </div>
+              </div>
+              <div class="config-panel">
+                <div class="experiment-config">
+                  <div class="config-header">
+                    <div class="config-header-lead">
+                      <div class="config-icon-wrap" aria-hidden="true">${icon("settings", 22, "#667eea")}</div>
+                      <div>
+                        <div class="panel-eyebrow">自动实验配置</div>
+                        <div class="config-title"><span class="config-title-text">自动实验配置</span></div>
+                        <div class="config-subtitle">完成配置并上传数据，待文件解析结束后，在页面底部点击「提交需求」进入多轮自动实验。</div>
+                      </div>
+                    </div>
+                    <span class="config-chip">${isConfigValid() ? "规则通过" : "待校验"}</span>
+                  </div>
+                  <div class="config-grid">
+                    <div class="config-field">
+                      <label class="config-label" for="optimization-metric">目标优化指标</label>
+                      <div class="metric-target-row">
+                        <select class="config-select" id="optimization-metric">
+                          ${optimizationMetrics.map(metric => `<option value="${metric}" ${state.optimizationMetric === metric ? "selected" : ""}>${metric}</option>`).join("")}
+                        </select>
+                        <input
+                          class="config-input ${errors.optimizationTarget ? "invalid" : ""}"
+                          id="optimization-target"
+                          type="number"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          inputmode="decimal"
+                          placeholder="${metricPlaceholders[state.optimizationMetric]}"
+                          value="${htmlEscape(state.optimizationTargetInput)}"
+                        />
+                      </div>
+                      <div class="field-meta">
+                        <span class="${errors.optimizationTarget ? "field-error" : "field-hint"}">${errors.optimizationTarget || `为 ${state.optimizationMetric} 填写目标值，范围 0 到 1。`}</span>
+                      </div>
+                    </div>
+                    <div class="config-inline">
+                      <div class="config-field">
+                        <label class="config-label" for="experiment-rounds">实验轮次</label>
+                        <div class="input-suffix">
+                          <input
+                            class="config-input ${errors.experimentRounds ? "invalid" : ""}"
+                            id="experiment-rounds"
+                            type="number"
+                            min="1"
+                            max="8"
+                            step="1"
+                            inputmode="numeric"
+                            value="${htmlEscape(state.experimentRoundsInput)}"
+                          />
+                          <span>轮</span>
+                        </div>
+                        <div class="field-meta">
+                          <span class="${errors.experimentRounds ? "field-error" : "field-hint"}">${errors.experimentRounds || "请输入 1 到 8 之间的整数轮次。"}</span>
+                        </div>
+                      </div>
+                      <div class="config-field">
+                        <label class="config-label" for="validation-ratio">验证集比例</label>
+                        <div class="input-suffix">
+                          <input
+                            class="config-input ${errors.validationRatio ? "invalid" : ""}"
+                            id="validation-ratio"
+                            type="number"
+                            min="5"
+                            max="100"
+                            step="1"
+                            inputmode="numeric"
+                            value="${htmlEscape(state.validationRatioInput)}"
+                          />
+                          <span>%</span>
+                        </div>
+                        <div class="field-meta">
+                          <span class="${errors.validationRatio ? "field-error" : "field-hint"}">${errors.validationRatio || `当前将按 ${state.validationRatio}% 显示验证集比例。`}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="upload-panel">
+                <div class="upload-stage-card">
+                  <div class="panel-head">
+                    <div class="panel-lead">
+                      <div class="config-icon-wrap" aria-hidden="true">${icon("upload", 22, "#667eea")}</div>
+                      <div>
+                        <div class="panel-eyebrow">上传文件模块</div>
+                        <div class="config-title"><span class="config-title-text">上传训练数据并等待结构解析</span></div>
+                        <div class="config-subtitle">支持 CSV、Excel 格式。上传完成后系统会自动解析数据结构，并在页面中保持现有显示内容不变。</div>
+                      </div>
+                    </div>
+                    <div class="upload-status-row">
+                      <span class="micro-pill ${state.uploadedFile && !state.isProcessing ? "success" : ""}">${state.uploadedFile ? (state.isProcessing ? "解析中" : "已上传") : "待上传"}</span>
+                      <span class="micro-pill">${state.validationRatio}% 验证集</span>
+                      <span class="micro-pill">${state.experimentRounds} 轮实验</span>
+                    </div>
+                  </div>
+                  <label class="dropzone" data-dropzone="data" for="file-upload-2">
+                    <input type="file" accept=".csv,.xlsx,.xls" id="file-upload-2" />
+                    ${icon("upload", 48, "#9ca3af")}
+                    <div class="drop-title">${state.uploadedFile ? `已上传: ${htmlEscape(state.uploadedFile)}` : "点击上传或拖拽文件到此处"}</div>
+                    <div class="drop-subtitle">支持 CSV、Excel 格式，最大 100MB</div>
+                  </label>
+                  ${state.isProcessing ? `<div class="loading-box"><div class="spinner"></div><span>正在解析数据结构，识别字段类型...</span></div>` : ""}
+                </div>
+              </div>
+            </div>
+            ${uploadSubmitFooterTemplate()}
+          </div>
+        </div>
+      `;
+    }
+
+    function uploadSubmitFooterTemplate() {
+      const hasFile = Boolean(state.uploadedFile);
+      const configReady = isConfigValid();
+      const canSubmit = hasFile && !state.isProcessing && configReady;
+      const reqOk = Boolean(state.modelingRequirement.trim());
+      let hint = "";
+      if (state.isProcessing) {
+        hint = "正在解析数据结构，请稍候…";
+      } else if (!configReady) {
+        hint = "请先修正自动实验配置中的输入规则，再进入多轮自动实验。";
+      } else if (!hasFile) {
+        hint = "请先上传或拖拽数据文件；解析完成后，点击「提交需求」即可进入多轮自动实验（建议同时填写上方建模要求）。";
+      } else if (!reqOk) {
+        hint = "数据文件已就绪，可直接提交进入自动实验；若补充建模要求，Agent 能更准确地理解业务目标。";
+      } else {
+        hint = "数据与建模要求已就绪，提交后将进入多轮自动实验。";
+      }
+      return `
+        <div class="submit-requirement-footer">
+          <p class="submit-step-hint">${hint}</p>
+          <div class="actions-right" style="margin-top: 0;">
+            <button type="button" class="small-primary" data-action="submit-requirement" ${canSubmit ? "" : "disabled"} aria-disabled="${canSubmit ? "false" : "true"}">${icon("play", 14, "#fff")}提交需求</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function trainingStepTemplate() {
+      const best = state.experimentLoops.reduce((winner, loop) => loop.auc > winner.auc ? loop : winner, state.experimentLoops[0]);
+      return `
+        <div class="card">
+          <div class="card-header">
+            <h3>2. 多轮自动化实验</h3>
+            <p>Agent 会围绕目标参数、数据处理、模型和集成策略进行多轮假设生成、执行与验证</p>
+          </div>
+          <div class="card-body">
+            ${experimentToolbarTemplate()}
+            ${experimentSummaryTemplate()}
+            <div class="experiment-layout">
+              ${loopRailTemplate()}
+              <div class="experiment-panel">
+                ${state.experimentView === "process" ? experimentProcessTemplate() : experimentResultTemplate()}
+              </div>
+            </div>
+            <div class="success-note" style="margin-top: 16px;">
+              ✓ 已完成 ${state.experimentLoops.length} 轮自动实验，当前最佳方案为 ${best.name}：XGBoost + 稳定业务衍生特征 + 集成校准。
+            </div>
+            <div class="actions-right" style="margin-top: 0;">
+              <button class="secondary-button" data-action="add-loop">${icon("plus", 14, "#4b5563")}继续一轮实验</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function experimentToolbarTemplate() {
+      return `
+        <div class="experiment-toolbar">
+          <div class="segmented" aria-label="实验视图切换">
+            <button class="${state.experimentView === "process" ? "active" : ""}" data-action="experiment-view" data-view="process">${icon("database", 14, state.experimentView === "process" ? "#fff" : "#6b7280")}Process</button>
+            <button class="${state.experimentView === "result" ? "active" : ""}" data-action="experiment-view" data-view="result">${icon("barChart3", 14, state.experimentView === "result" ? "#fff" : "#6b7280")}Result</button>
+          </div>
+          <div class="experiment-actions">
+            <button class="switch-row" data-action="toggle-successful" aria-label="只看成功假设">
+              <span class="switch ${state.successfulOnly ? "on" : ""}"></span>
+              <span>只看成功假设</span>
+            </button>
+            <button class="ghost-button">${icon("download", 14, "#4b5563")}下载实验记录</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function experimentSummaryTemplate() {
+      const loops = state.experimentLoops;
+      const successCount = loops.filter(loop => loop.status === "success").length;
+      const best = loops.reduce((winner, loop) => loop.auc > winner.auc ? loop : winner, loops[0]);
+      const rowCount = experimentRows().length;
+      const targetRounds = Math.max(1, Number(state.experimentRounds) || 1);
+      return `
+        <div class="experiment-summary">
+          <div class="experiment-summary-head">
+            <div class="experiment-summary-title">实验完成进度与关键结果</div>
+            <div class="summary-chip-row">
+              <span class="summary-chip">${icon("trendingUp", 14, "#3b82f6")}最佳 Loop：${best.name}</span>
+              <span class="summary-chip">${icon("sparkles", 14, "#10b981")}目标 ${state.optimizationMetric} ${formatMetricTarget()}</span>
+              <span class="summary-chip">${icon("clock", 14, "#64748b")}验证集 ${state.validationRatio}%</span>
+            </div>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" style="width: ${progressWidth((loops.length / targetRounds) * 100)}%"></div>
+          </div>
+          <div class="loop-progress-row">
+            ${loops.map(loop => `
+              <span class="loop-progress-chip ${loop.status} ${state.activeLoopId === loop.id ? "active" : ""}">${loop.name} · ${loop.status === "success" ? "Success" : "Failed"}</span>
+            `).join("")}
+          </div>
+          <div class="experiment-summary-grid" style="margin-top: 14px;">
+            <div class="mini-metric"><div class="label">实验轮次</div><div class="value">${loops.length}/${targetRounds}</div></div>
+            <div class="mini-metric"><div class="label">成功 Loop</div><div class="value" style="color:#10b981;">${successCount}</div></div>
+            <div class="mini-metric"><div class="label">最佳 ${htmlEscape(state.optimizationMetric)}</div><div class="value" style="color:#3b82f6;">${best.auc.toFixed(4)}</div></div>
+            <div class="mini-metric"><div class="label">验证比例</div><div class="value">${state.validationRatio}%</div></div>
+            <div class="mini-metric"><div class="label">当前结果项</div><div class="value">${rowCount}</div></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function loopRailTemplate() {
+      return `
+        <div class="loop-rail">
+          <div class="loop-rail-header">${icon("zap", 16, "#667eea")}实验 Loops</div>
+          ${state.experimentLoops.map(loop => `
+            <button class="loop-item ${state.activeLoopId === loop.id ? "active" : ""}" data-action="select-loop" data-loop-id="${loop.id}">
+              <span class="loop-main">
+                <span class="status-dot ${loop.status}">${loop.status === "success" ? icon("check", 14, "#16a34a", 2.5) : icon("x", 14, "#dc2626", 2.5)}</span>
+                <span class="loop-name">${loop.name}</span>
+              </span>
+              <span class="loop-score">${loop.auc.toFixed(4)}</span>
+            </button>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function experimentProcessTemplate() {
+      const loop = activeLoop();
+      return `
+        <div class="process-stack">
+          <div class="info-box" style="margin-bottom: 0;">
+            <div class="info-title">${icon("sparkles", 16, "#3b82f6")}${loop.name} 实验步骤</div>
+            <p>${loop.summary}</p>
+          </div>
+          ${loop.components.map(component => `
+            <div class="process-card">
+              <div class="process-order">${component.order}</div>
+              <div class="process-type">${component.type}</div>
+              <div class="process-copy">
+                <strong>假设：</strong>${component.hypothesis}<br />
+                <strong>验证：</strong>${component.evidence}
+              </div>
+              <div class="status-pill ${component.status}">${component.status === "success" ? "Success" : "Failed"}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function experimentResultTemplate() {
+      const rows = experimentRows();
+      return `
+        <div class="result-table">
+          <div class="result-row header">
+            <div>Loop</div>
+            <div>组件</div>
+            <div>状态</div>
+            <div>实验假设</div>
+            <div>验证结论</div>
+            <div></div>
+            <div>模型部署</div>
+          </div>
+          ${rows.map(({ loop, component }) => `
+            <div class="result-row">
+              <div class="result-cell-title">${loop.name.replace(" Loop", "")}</div>
+              <div class="result-cell-title">${component.type}</div>
+              <div><span class="status-pill ${component.status}">${component.status === "success" ? "Success" : "Failed"}</span></div>
+              <div class="result-copy">${component.hypothesis}</div>
+              <div class="result-copy">${component.evidence}</div>
+              <button class="expand-button" data-action="toggle-experiment" data-experiment-id="${component.id}">${state.expandedExperimentId === component.id ? "−" : "+"}</button>
+              <div class="result-deploy-cell">
+                <button type="button" class="ghost-button result-deploy-btn" data-action="go-deploy">${icon("rocket", 14, "#4b5563")}部署</button>
+              </div>
+              ${state.expandedExperimentId === component.id ? `
+                <div class="experiment-detail">
+                  <strong>${loop.name} / ${component.type}</strong><br />
+                  指标变化：${component.metric}。本轮结论：${loop.summary} 系统会把成功假设沉淀到下一轮，把失败假设记录为排除依据，避免重复尝试。
+                </div>
+              ` : ""}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function deployStepTemplate() {
+      const options = [
+        { title: "导出 PMML", desc: "标准化模型格式", icon: "fileText" },
+        { title: "Python 代码", desc: "完整推理代码", icon: "fileText" }
+      ];
+      const best = state.experimentLoops.reduce((winner, loop) => loop.auc > winner.auc ? loop : winner, state.experimentLoops[0]);
+      return `
+        <div class="card">
+          <div class="card-header">
+            <h3>3. 一键模型交付</h3>
+            <p>选择您需要的交付方式，立即导出使用</p>
+          </div>
+          <div class="card-body">
+            <div class="experiment-summary" style="margin-bottom: 20px;">
+              <div class="experiment-summary-head">
+                <div class="experiment-summary-title">部署前确认</div>
+                <div class="summary-chip-row">
+                  <span class="summary-chip">${icon("check", 14, "#16a34a")}最佳方案 ${best.name}</span>
+                  <span class="summary-chip">${icon("barChart3", 14, "#3b82f6")}${state.optimizationMetric} ${best.auc.toFixed(4)}</span>
+                  <span class="summary-chip">${icon("clock", 14, "#64748b")}验证集 ${state.validationRatio}%</span>
+                </div>
+              </div>
+              <div class="progress">
+                <div class="progress-fill" style="width: 100%"></div>
+              </div>
+            </div>
+            <div class="deploy-grid">
+              ${options.map(option => `
+                <div class="deploy-option">
+                  ${icon(option.icon, 24, "#667eea")}
+                  <div class="deploy-title">${option.title}</div>
+                  <div class="deploy-desc">${option.desc}</div>
+                </div>
+              `).join("")}
+            </div>
+            <div class="ready-box">
+              <div style="display: flex; justify-content: center;">${icon("check", 32, "#10b981")}</div>
+              <div class="ready-title">模型已准备就绪！</div>
+              <div class="ready-desc">从数据上传到模型交付，全程自动化完成，当前最佳模型为 ${best.name}。</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function activeStepTemplate() {
+      if (state.currentStep === 0) return uploadStepTemplate();
+      if (state.currentStep === 1) return trainingStepTemplate();
+      return deployStepTemplate();
+    }
+
+    function mainTemplate() {
+      return `
+        <main class="main">
+          ${topbarTemplate()}
+          <section class="content">
+            <div class="content-inner">
+              <div class="agent-header">
+                <div class="agent-icon">${icon("sparkles", 20, "#fff")}</div>
+                <div style="flex: 1;">
+                  <div class="agent-title">Data Agent</div>
+              <div class="agent-subtitle">我将协助您完成从数据到模型的全流程建模</div>
+                </div>
+              </div>
+              ${stepsTemplate()}
+              ${phaseBannerTemplate()}
+              ${activeStepTemplate()}
+            </div>
+          </section>
+        </main>
+      `;
+    }
+
+    function bindEvents() {
+      document.querySelectorAll("[data-chat]").forEach(item => {
+        item.addEventListener("click", () => setState({ selectedChat: item.dataset.chat }));
+      });
+
+      document.querySelector("[data-action='new-chat']")?.addEventListener("click", () => {
+        setState({
+          currentStep: 0,
+          uploadedFile: null,
+          modelingRequirement: "",
+          requirementSubmitted: false,
+          experimentRounds: 5,
+          experimentRoundsInput: "5",
+          optimizationMetric: "AUC",
+          optimizationTarget: 0.95,
+          optimizationTargetInput: "0.95",
+          validationRatio: 20,
+          validationRatioInput: "20",
+          experimentView: "result",
+          successfulOnly: false,
+          activeLoopId: 5,
+          expandedExperimentId: null,
+          experimentLoops: cloneExperiments(defaultExperimentLoops),
+          isProcessing: false,
+          selectedChat: "新建模项目"
+        });
+      });
+
+      document.getElementById("modeling-requirement")?.addEventListener("input", event => {
+        setState({
+          modelingRequirement: event.target.value,
+          requirementSubmitted: false
+        });
+      });
+
+      document.querySelector("[data-action='submit-requirement']")?.addEventListener("click", event => {
+        const btn = event.currentTarget;
+        if (btn.disabled) return;
+        if (!state.uploadedFile || state.isProcessing) return;
+        const ta = document.getElementById("modeling-requirement");
+        const value = (ta?.value ?? "").trim();
+        const loops = configuredExperimentLoops();
+        setState({
+          modelingRequirement: value,
+          requirementSubmitted: Boolean(value),
+          currentStep: 1,
+          experimentLoops: loops,
+          activeLoopId: loops[loops.length - 1]?.id || 1,
+          experimentView: "result",
+          successfulOnly: false,
+          expandedExperimentId: null
+        });
+      });
+
+      bindConfigInput("optimization-metric", "optimizationMetric");
+      bindValidatedNumberInput("experiment-rounds", {
+        rawKey: "experimentRoundsInput",
+        valueKey: "experimentRounds",
+        normalize: value => {
+          const num = Number(value);
+          return Number.isInteger(num) && num >= 1 && num <= 8 ? num : state.experimentRounds;
+        }
+      });
+      bindValidatedNumberInput("validation-ratio", {
+        rawKey: "validationRatioInput",
+        valueKey: "validationRatio",
+        normalize: value => {
+          const num = Number(value);
+          return Number.isFinite(num) && num >= 5 && num <= 100 ? num : state.validationRatio;
+        }
+      });
+      bindValidatedNumberInput("optimization-target", {
+        rawKey: "optimizationTargetInput",
+        valueKey: "optimizationTarget",
+        normalize: value => {
+          const num = Number(value);
+          return Number.isFinite(num) && num >= 0 && num <= 1 ? num : state.optimizationTarget;
+        }
+      });
+
+      document.querySelectorAll("[data-action='experiment-view']").forEach(button => {
+        button.addEventListener("click", () => setState({ experimentView: button.dataset.view }));
+      });
+
+      document.querySelector("[data-action='toggle-successful']")?.addEventListener("click", () => {
+        setState({ successfulOnly: !state.successfulOnly, expandedExperimentId: null });
+      });
+
+      document.querySelectorAll("[data-action='select-loop']").forEach(button => {
+        button.addEventListener("click", () => {
+          setState({ activeLoopId: Number(button.dataset.loopId), experimentView: "process", expandedExperimentId: null });
+        });
+      });
+
+      document.querySelectorAll("[data-action='toggle-experiment']").forEach(button => {
+        button.addEventListener("click", () => {
+          const id = button.dataset.experimentId;
+          setState({ expandedExperimentId: state.expandedExperimentId === id ? null : id });
+        });
+      });
+
+      document.querySelector("[data-action='add-loop']")?.addEventListener("click", () => {
+        const nextLoop = createNextLoop();
+        setState({
+          experimentLoops: [...state.experimentLoops, nextLoop],
+          activeLoopId: nextLoop.id,
+          experimentView: "process",
+          successfulOnly: false,
+          expandedExperimentId: null
+        });
+      });
+
+      document.querySelectorAll("[data-action='go-deploy']").forEach(button => {
+        button.addEventListener("click", () => setState({ currentStep: 2 }));
+      });
+
+      document.getElementById("file-upload-2")?.addEventListener("change", event => {
+        const file = event.target.files[0];
+        if (!file) return;
+        handleFileUpload(file.name);
+      });
+
+      document.querySelectorAll("[data-dropzone]").forEach(zone => {
+        zone.addEventListener("dragover", event => {
+          event.preventDefault();
+          zone.classList.add("dragover");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+        zone.addEventListener("drop", event => {
+          event.preventDefault();
+          zone.classList.remove("dragover");
+          const file = event.dataTransfer.files[0];
+          if (!file) return;
+          handleFileUpload(file.name);
+        });
+      });
+    }
+
+    function bindConfigInput(id, key) {
+      document.getElementById(id)?.addEventListener("input", event => {
+        const patch = { [key]: event.target.value };
+        if (id === "optimization-metric") {
+          const nextPlaceholder = metricPlaceholders[event.target.value] || "";
+          if (!state.optimizationTargetInput.trim()) {
+            patch.optimizationTargetInput = nextPlaceholder;
+            patch.optimizationTarget = Number(nextPlaceholder) || 0;
+          }
+        }
+        setState(patch);
+      });
+    }
+
+    function bindValidatedNumberInput(id, config) {
+      document.getElementById(id)?.addEventListener("input", event => {
+        const rawValue = event.target.value;
+        const patch = { [config.rawKey]: rawValue };
+        const normalized = config.normalize(rawValue);
+        if (rawValue.trim()) {
+          patch[config.valueKey] = normalized;
+        }
+        setState(patch);
+      });
+    }
+
+    function handleFileUpload(fileName) {
+      setState({ uploadedFile: fileName, isProcessing: true, requirementSubmitted: false });
+      window.setTimeout(() => {
+        setState({
+          isProcessing: false
+        });
+      }, 2000);
+    }
+
+    function render() {
+      document.getElementById("app").innerHTML = `
+        ${sidebarTemplate()}
+        ${mainTemplate()}
+      `;
+      bindEvents();
+    }
+
+    render();
+  </script>
+</body>
+</html>

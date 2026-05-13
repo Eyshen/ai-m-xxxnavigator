@@ -1,0 +1,62 @@
+{
+  "projectId": "marketing-response-model",
+  "name": "营销响应率预测",
+  "status": "completed",
+  "entryView": "completed",
+  "time": "3天前",
+  "summary": "营销响应率项目已完成，可选择部署模型查看指标并下载压缩包。",
+  "dataset": {
+    "name": "marketing-response.csv",
+    "rows": 26000,
+    "columns": 37,
+    "target": "will_respond"
+  },
+  "completed": {
+    "currentStep": 2,
+    "defaultSelectedModelId": "marketing-ensemble-v2",
+    "models": [
+      {
+        "modelId": "marketing-ensemble-v2",
+        "modelName": "Ensemble 响应预测模型",
+        "version": "v2.0.0",
+        "status": "recommended",
+        "primaryMetricName": "AUC",
+        "primaryMetricValue": 0.8245,
+        "ks": 0.5528,
+        "f1Score": 0.761,
+        "accuracy": 0.842,
+        "recall": 0.734,
+        "featureCount": 31,
+        "trainedAt": "2026-05-10 14:32",
+        "summary": "综合收益和稳定性最佳，适合结果汇报。",
+        "deploymentSummary": "适合营销响应率分析和后续策略回访使用。",
+        "package": {
+          "packageName": "marketing-ensemble-v2.zip",
+          "downloadUrl": "/mock-model-packages/marketing-ensemble-v2.zip",
+          "sizeLabel": "1.1 MB"
+        }
+      },
+      {
+        "modelId": "marketing-lightgbm-v1",
+        "modelName": "LightGBM 快速响应模型",
+        "version": "v1.4.0",
+        "status": "available",
+        "primaryMetricName": "AUC",
+        "primaryMetricValue": 0.8012,
+        "ks": 0.5311,
+        "f1Score": 0.744,
+        "accuracy": 0.831,
+        "recall": 0.712,
+        "featureCount": 28,
+        "trainedAt": "2026-05-10 12:05",
+        "summary": "训练速度快，适合快速迭代场景。",
+        "deploymentSummary": "适合轻量营销实验和快速 AB 演示。",
+        "package": {
+          "packageName": "marketing-lightgbm-v1.zip",
+          "downloadUrl": "/mock-model-packages/marketing-lightgbm-v1.zip",
+          "sizeLabel": "890 KB"
+        }
+      }
+    ]
+  }
+}

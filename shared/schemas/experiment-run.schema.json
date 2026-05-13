@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExperimentRun",
+  "type": "object",
+  "required": [
+    "runId",
+    "projectId",
+    "status",
+    "dataset",
+    "prompt",
+    "config",
+    "steps",
+    "result"
+  ],
+  "properties": {
+    "runId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "failed"]
+    },
+    "dataset": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "rows": { "type": "integer" },
+        "columns": { "type": "integer" }
+      }
+    },
+    "prompt": {
+      "type": "object",
+      "required": ["goal"],
+      "properties": {
+        "goal": { "type": "string" },
+        "systemPrompt": { "type": "string" },
+        "userPrompt": { "type": "string" }
+      }
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "maxLoops": { "type": "integer" },
+        "evaluationMetric": { "type": "string" },
+        "baselineModels": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stepId", "name", "type", "status"],
+        "properties": {
+          "stepId": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "running", "success", "failed"]
+          },
+          "summary": { "type": "string" }
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "bestLoop": { "type": "string" },
+        "bestMetric": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "value": { "type": "number" }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string" }
+            }
+          }
+        },
+        "summary": { "type": "string" }
+      }
+    }
+  }
+}

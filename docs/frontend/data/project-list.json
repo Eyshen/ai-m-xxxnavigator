@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "projectId": "credit-risk-model",
+    "name": "信用卡逾期预测模型",
+    "time": "2小时前",
+    "status": "completed",
+    "summary": "已完成信用风险评分建模，可直接选择模型部署。"
+  },
+  {
+    "id": 2,
+    "projectId": "customer-churn-model",
+    "name": "客户流失分析",
+    "time": "昨天",
+    "status": "completed",
+    "summary": "已完成客户流失模型实验，可查看最佳模型和下载包。"
+  },
+  {
+    "id": 3,
+    "projectId": "marketing-response-model",
+    "name": "营销响应率预测",
+    "time": "3天前",
+    "status": "completed",
+    "summary": "已完成营销响应率建模，可切换候选模型。"
+  },
+  {
+    "id": 4,
+    "projectId": "fraud-transfer-running",
+    "name": "欺诈转账识别实验",
+    "time": "刚刚",
+    "status": "running",
+    "summary": "项目进行中，当前处于多轮自动实验阶段。"
+  },
+  {
+    "id": 5,
+    "projectId": "new-modeling-project",
+    "name": "新建模项目",
+    "time": "刚刚",
+    "status": "created",
+    "summary": "新项目待创建，请填写建模要求并上传数据。"
+  }
+]
