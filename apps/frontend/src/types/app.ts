@@ -165,6 +165,30 @@ export interface TrainingLoopLog {
   };
 }
 
+export interface RunningPlaybackLoopItem {
+  id: number;
+  name: string;
+  status: "pending" | "running" | "success" | "failed";
+  score?: number;
+  note?: string;
+}
+
+export interface RunningPlaybackMetricItem extends OverviewMetricItem {
+  revealed: boolean;
+}
+
+export interface RunningPlaybackStep extends TrainingEvolutionStep {
+  visibleCode: string;
+  visibleExecutionLog: string;
+  revealed: boolean;
+}
+
+export interface RunningPlaybackLog extends TrainingLoopLog {
+  revealedActions: string[];
+  visibleFeedback: string;
+  steps: RunningPlaybackStep[];
+}
+
 export interface RunningProjectData {
   currentStep: StageId;
   overviewMetrics: OverviewMetricItem[];
@@ -256,4 +280,5 @@ export type IconName =
   | "messageSquare"
   | "clock"
   | "play"
-  | "download";
+  | "download"
+  | "pencil";

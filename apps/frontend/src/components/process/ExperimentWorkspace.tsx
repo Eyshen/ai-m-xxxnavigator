@@ -1,11 +1,20 @@
 import { Icon } from "@/components/common/Icon";
 import { MetricsStrip } from "@/components/charts/MetricsStrip";
-import type { ExperimentLoop, FrontendAppState, OverviewMetricItem, TrainingLoopLog, WorkspaceMetrics } from "@/types/app";
+import type {
+  ExperimentLoop,
+  FrontendAppState,
+  OverviewMetricItem,
+  RunningPlaybackLog,
+  RunningPlaybackLoopItem,
+  TrainingLoopLog,
+  WorkspaceMetrics
+} from "@/types/app";
 
 interface ExperimentWorkspaceProps {
   state: FrontendAppState;
   overviewItems?: OverviewMetricItem[];
-  loopLogs?: TrainingLoopLog[];
+  loopLogs?: RunningPlaybackLog[] | TrainingLoopLog[];
+  playbackLoops?: RunningPlaybackLoopItem[];
   workspaceMetrics: WorkspaceMetrics;
   onChangeView: (view: FrontendAppState["experimentView"]) => void;
   onToggleSuccessful: () => void;
@@ -41,6 +50,7 @@ export function ExperimentWorkspace({
   state,
   overviewItems,
   loopLogs,
+  playbackLoops,
   workspaceMetrics,
   onChangeView,
   onToggleSuccessful,
@@ -160,29 +170,58 @@ export function ExperimentWorkspace({
             <Icon name="zap" size={15} color="#1f6fff" />
             实验 Loops
           </div>
-          {state.experimentLoops.map((loop) => (
-            <button
-              key={loop.id}
-              className={`loop-item ${state.activeLoopId === loop.id ? "loop-item--active" : ""}`}
-              onClick={() => onSelectLoop(loop.id)}
-              type="button"
-            >
-              <div className="loop-item__main">
-                <span className={`loop-item__status loop-item__status--${loop.status}`}>
-                  {loop.status === "success" ? (
-                    <Icon name="check" size={13} color="#196b4d" strokeWidth={2.6} />
-                  ) : (
-                    <Icon name="x" size={13} color="#8f3c31" strokeWidth={2.6} />
-                  )}
-                </span>
-                <div>
-                  <div className="loop-item__name">{loop.name}</div>
-                  <div className="loop-item__meta">{loop.status === "success" ? "收益有效" : "方案淘汰"}</div>
+          {(playbackLoops ?? state.experimentLoops).map((loop) => {
+            const isPending = "status" in loop && loop.status === "pending";
+            const isRunning = "status" in loop && loop.status === "running";
+            const isRealLoop = "auc" in loop;
+            const loopId = loop.id;
+            return (
+              <button
+                key={loop.id}
+                className={`loop-item ${state.activeLoopId === loopId ? "loop-item--active" : ""} ${
+                  isPending ? "loop-item--pending" : ""
+                } ${isRunning ? "loop-item--running" : ""}`}
+                onClick={() => !isPending && onSelectLoop(loopId)}
+                type="button"
+                disabled={isPending}
+              >
+                <div className="loop-item__main">
+                  <span
+                    className={`loop-item__status ${
+                      isPending
+                        ? "loop-item__status--pending"
+                        : isRunning
+                          ? "loop-item__status--running"
+                          : `loop-item__status--${loop.status}`
+                    }`}
+                  >
+                    {isPending ? (
+                      <span className="loop-item__dot" />
+                    ) : isRunning ? (
+                      <span className="loop-item__spinner" />
+                    ) : loop.status === "success" ? (
+                      <Icon name="check" size={13} color="#196b4d" strokeWidth={2.6} />
+                    ) : (
+                      <Icon name="x" size={13} color="#8f3c31" strokeWidth={2.6} />
+                    )}
+                  </span>
+                  <div>
+                    <div className="loop-item__name">{loop.name}</div>
+                    <div className="loop-item__meta">
+                      {"note" in loop
+                        ? loop.note
+                        : loop.status === "success"
+                          ? "收益有效"
+                          : "方案淘汰"}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <span className="loop-item__score">{loop.auc.toFixed(4)}</span>
-            </button>
-          ))}
+                <span className="loop-item__score">
+                  {isRealLoop ? loop.auc.toFixed(4) : "......"}
+                </span>
+              </button>
+            );
+          })}
         </aside>
 
         <div className="workspace-panel">
@@ -251,7 +290,7 @@ export function ExperimentWorkspace({
                   </div>
 
                   <div className="training-log-actions">
-                    {activeLog.research.proposed_actions.map((action) => (
+                    {(activeLog.research.proposed_actions ?? []).map((action) => (
                       <span key={action} className="artifact-pill">
                         {action}
                       </span>
@@ -259,7 +298,42 @@ export function ExperimentWorkspace({
                   </div>
 
                   <div className="training-log-steps">
-                    {activeLog.development.evolving_steps.map((step) => (
+                    {(activeLog as RunningPlaybackLog).steps
+                      ? (activeLog as RunningPlaybackLog).steps.map((step) => (
+                        <article key={step.step_id} className="training-step-card">
+                          <div className="training-step-card__head">
+                            <div className="training-step-card__order">
+                              Step {step.step_id}
+                            </div>
+                            <div className={`status-pill status-pill--${step.execution_status === "Success" ? "success" : "failed"}`}>
+                              {step.execution_status}
+                            </div>
+                          </div>
+                          <div className="training-step-card__title">{step.action}</div>
+                          <pre
+                            className={`training-step-card__code ${
+                              step.visibleCode !== step.code ? "training-step-card__code--typing" : ""
+                            }`}
+                          >
+                            {step.visibleCode || "生成中..."}
+                          </pre>
+                          <div
+                            className={`training-step-card__log ${
+                              step.visibleExecutionLog !== step.execution_log
+                                ? "training-step-card__log--typing"
+                                : ""
+                            }`}
+                          >
+                            {step.visibleExecutionLog || "等待执行日志..."}
+                          </div>
+                          {step.agent_reflection ? (
+                            <div className="training-step-card__reflection">
+                              {step.agent_reflection}
+                            </div>
+                          ) : null}
+                        </article>
+                      ))
+                      : activeLog.development.evolving_steps.map((step) => (
                       <article key={step.step_id} className="training-step-card">
                         <div className="training-step-card__head">
                           <div className="training-step-card__order">
@@ -298,7 +372,9 @@ export function ExperimentWorkspace({
                     <article className="training-log-block">
                       <div className="training-log-block__label">Feedback Analysis</div>
                       <div className="training-log-block__text">
-                        {activeLog.evaluation.feedback_analysis}
+                        {"visibleFeedback" in activeLog
+                          ? activeLog.visibleFeedback || "分析生成中..."
+                          : activeLog.evaluation.feedback_analysis}
                       </div>
                     </article>
                   </div>

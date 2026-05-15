@@ -130,6 +130,33 @@ svg {
   box-shadow: 0 12px 28px rgba(30, 200, 255, 0.24);
 }
 
+.sidebar__logo--bank {
+  position: relative;
+  overflow: hidden;
+  background: #1d4fa4;
+  box-shadow: 0 12px 28px rgba(17, 54, 118, 0.3);
+}
+
+.sidebar__logo-shape {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef2f9 100%);
+}
+
+.sidebar__logo-shape--top {
+  top: 8px;
+  height: 12px;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.sidebar__logo-shape--bottom {
+  bottom: 7px;
+  height: 16px;
+  clip-path: polygon(0% 0%, 100% 0%, 62% 45%, 100% 100%, 0% 100%, 38% 45%);
+}
+
 .sidebar__title {
   color: var(--text-strong);
   font-size: 1.14rem;
@@ -218,11 +245,44 @@ svg {
   min-width: 0;
 }
 
+.project-item__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .project-item__name {
   color: var(--text-strong);
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.4;
+}
+
+.project-item__input {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(120, 228, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(8, 18, 34, 0.92);
+  color: var(--text-strong);
+}
+
+.project-item__edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(120, 228, 255, 0.08);
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.project-item__edit:hover {
+  background: rgba(120, 228, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 .project-item__meta {
@@ -404,6 +464,15 @@ svg {
   margin-top: 8px;
   color: var(--muted);
   font-size: 0.76rem;
+}
+
+.metric-card--ghost {
+  opacity: 0.46;
+}
+
+.metric-card__value--loading {
+  color: rgba(125, 154, 182, 0.78);
+  letter-spacing: 0.08em;
 }
 
 .panel,
@@ -1295,6 +1364,15 @@ svg {
   background: rgba(13, 28, 50, 0.94);
 }
 
+.loop-item--pending {
+  opacity: 0.72;
+}
+
+.loop-item--running {
+  border-color: rgba(30, 200, 255, 0.26);
+  box-shadow: 0 0 0 1px rgba(30, 200, 255, 0.1);
+}
+
 .loop-item__main {
   display: flex;
   align-items: center;
@@ -1316,6 +1394,30 @@ svg {
 
 .loop-item__status--failed {
   background: var(--red-soft);
+}
+
+.loop-item__status--pending {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loop-item__status--running {
+  background: rgba(30, 200, 255, 0.12);
+}
+
+.loop-item__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(125, 154, 182, 0.76);
+}
+
+.loop-item__spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(30, 200, 255, 0.2);
+  border-top-color: var(--brand);
+  border-radius: 999px;
+  animation: spin 0.9s linear infinite;
 }
 
 .loop-item__name {
@@ -1755,12 +1857,33 @@ svg {
   white-space: pre-wrap;
 }
 
+.training-step-card__code--typing,
+.training-step-card__log--typing {
+  position: relative;
+}
+
+.training-step-card__code--typing::after,
+.training-step-card__log--typing::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  margin-left: 4px;
+  background: rgba(120, 228, 255, 0.7);
+  vertical-align: -2px;
+  animation: caretBlink 1s steps(1) infinite;
+}
+
 .training-step-card__log,
 .training-step-card__reflection {
   margin-top: 12px;
   color: var(--muted-strong);
   font-size: 0.82rem;
   line-height: 1.7;
+}
+
+.training-step-card__log {
+  min-height: 22px;
 }
 
 .training-step-card__reflection {
@@ -1962,6 +2085,12 @@ svg {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes caretBlink {
+  50% {
+    opacity: 0;
   }
 }
 

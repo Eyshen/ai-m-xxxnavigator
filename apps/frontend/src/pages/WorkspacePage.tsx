@@ -15,18 +15,25 @@ import {
   deliveryOptions,
   getCompletedProjectData,
   getCreatedProjectData,
-  getProjectById,
+  getDefaultCompletedTemplate,
+  getInitialEditableProjects,
   getRunningOverviewMetrics,
   getRunningProjectData,
   initialAppState,
   initialProject,
-  projectHistory,
   quickRequirementTemplates,
   workflowStages,
   workspaceMetrics
 } from "@/data/mockData";
 import { downloadJson } from "@/utils/download";
-import type { FrontendAppState } from "@/types/app";
+import type {
+  FrontendAppState,
+  FrontendProject,
+  RunningPlaybackLog,
+  RunningPlaybackLoopItem,
+  RunningPlaybackMetricItem,
+  RunningPlaybackStep
+} from "@/types/app";
 import { useEffect, useState } from "react";
 
 const metricPlaceholders: Record<FrontendAppState["optimizationMetric"], string> = {
@@ -107,9 +114,20 @@ function normalizeInputWithReset(
   return num;
 }
 
+function sliceTextProgressively(text: string, ratio: number) {
+  const safe = text ?? "";
+  if (!safe) return "";
+  const length = Math.max(0, Math.min(safe.length, Math.floor(safe.length * ratio)));
+  return safe.slice(0, length);
+}
+
 export function WorkspacePage() {
   const [state, setState] = useState<FrontendAppState>(initialAppState);
-  const project = getProjectById(state.projectId);
+  const [projects, setProjects] = useState<FrontendProject[]>(getInitialEditableProjects());
+  const [visibleLoopCount, setVisibleLoopCount] = useState<number | null>(null);
+  const [logRevealTick, setLogRevealTick] = useState(0);
+  const project =
+    projects.find((item) => item.projectId === state.projectId) ?? projects[0] ?? initialProject;
   const validationErrors = getValidationErrors(state);
   const configValid = isConfigValid(state);
 
@@ -128,8 +146,61 @@ export function WorkspacePage() {
     return () => window.clearTimeout(timer);
   }, [state.isProcessing]);
 
+  useEffect(() => {
+    if (project.status !== "running") {
+      setVisibleLoopCount(null);
+      setLogRevealTick(0);
+      return;
+    }
+
+    if (state.experimentLoops.length === 0) {
+      setVisibleLoopCount(0);
+      return;
+    }
+
+    setVisibleLoopCount(1);
+    setLogRevealTick(0);
+    let current = 1;
+    const timer = window.setInterval(() => {
+      current += 1;
+      setVisibleLoopCount((prev) => {
+        const next = prev === null ? current : Math.max(prev, current);
+        return Math.min(next, state.experimentLoops.length);
+      });
+      if (current >= state.experimentLoops.length) {
+        window.clearInterval(timer);
+      }
+    }, 850);
+
+    return () => window.clearInterval(timer);
+  }, [project.status, state.projectId, state.experimentLoops]);
+
+  useEffect(() => {
+    if (project.status !== "running") {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setLogRevealTick((prev) => prev + 1);
+    }, 180);
+
+    return () => window.clearInterval(timer);
+  }, [project.status, state.projectId, state.activeLoopId]);
+
   const resetWorkspace = () => {
-    setState(createAppStateFromProject(initialProject));
+    const nextCreatedProject: FrontendProject = {
+      ...initialProject,
+      projectId: `created-project-${Date.now()}`,
+      name: `新建模项目 ${projects.length + 1}`,
+      time: "刚刚",
+      summary: "新项目待创建，请填写建模要求并上传数据。"
+    };
+
+    setProjects((current) => [
+      ...current,
+      nextCreatedProject
+    ]);
+    setState(createAppStateFromProject(nextCreatedProject));
   };
 
   const datasetSummary = {
@@ -145,6 +216,86 @@ export function WorkspacePage() {
   const runningData = getRunningProjectData(project);
   const createdData = getCreatedProjectData(project);
   const completedData = getCompletedProjectData(project);
+  const visibleExperimentLoops =
+    project.status === "running" && visibleLoopCount !== null
+      ? state.experimentLoops.slice(0, visibleLoopCount)
+      : state.experimentLoops;
+  const playbackLoops: RunningPlaybackLoopItem[] =
+    project.status === "running"
+      ? state.experimentLoops.map((loop, index) => {
+          const isVisible = visibleLoopCount !== null && index < visibleLoopCount;
+          const allLoopsRevealed =
+            visibleLoopCount !== null && visibleLoopCount >= state.experimentLoops.length;
+          const isCurrent = !allLoopsRevealed && index === (visibleLoopCount ?? 1) - 1;
+          if (!isVisible) {
+            return {
+              id: loop.id,
+              name: `${String(loop.id).padStart(2, "0")} Loop`,
+              status: "pending",
+              note: "等待生成"
+            };
+          }
+          return {
+            id: loop.id,
+            name: loop.name,
+            status: isCurrent ? "running" : loop.status,
+            score: loop.auc,
+            note: isCurrent ? "生成中" : loop.status === "success" ? "收益有效" : "方案淘汰"
+          };
+        })
+      : [];
+  const visibleBestLoop = visibleExperimentLoops.reduce(
+    (winner, loop) => (loop.auc > winner.auc ? loop : winner),
+    visibleExperimentLoops[0] ?? state.experimentLoops[0]
+  );
+  const playbackMetrics: RunningPlaybackMetricItem[] =
+    project.status === "running"
+      ? (getRunningOverviewMetrics(project) ?? []).map((item, index) => ({
+          ...item,
+          value:
+            index === 2 && visibleLoopCount !== null
+              ? String(playbackLoops.filter((loop) => loop.status === "success").length)
+              : index === 3 && visibleBestLoop
+                ? visibleBestLoop.auc.toFixed(4)
+                : index === 4
+                  ? String(
+                      visibleExperimentLoops.flatMap((loop) => loop.components).length
+                    )
+                  : item.value,
+          revealed: visibleLoopCount !== null && visibleLoopCount >= Math.min(index + 1, 2)
+        }))
+      : [];
+  const playbackLogs: RunningPlaybackLog[] =
+    project.status === "running"
+      ? (runningData?.loopLogs ?? []).map((log, index) => {
+          const loopIsVisible = visibleLoopCount !== null && index < visibleLoopCount;
+          const phaseBase = Math.max(0, logRevealTick - index * 10);
+          const actionCount = loopIsVisible ? Math.min(log.research.proposed_actions.length, Math.max(0, phaseBase - 1)) : 0;
+          const feedbackRatio = loopIsVisible ? Math.min(1, Math.max(0, (phaseBase - 9) / 8)) : 0;
+          const steps: RunningPlaybackStep[] = log.development.evolving_steps.map((step, stepIndex) => {
+            const stepPhase = Math.max(0, phaseBase - stepIndex * 5);
+            const codeRatio = Math.min(1, Math.max(0, stepPhase / 4));
+            const logRatio = Math.min(1, Math.max(0, (stepPhase - 2) / 4));
+            return {
+              ...step,
+              visibleCode: loopIsVisible ? sliceTextProgressively(step.code, codeRatio) : "",
+              visibleExecutionLog: loopIsVisible
+                ? sliceTextProgressively(step.execution_log, logRatio)
+                : "",
+              revealed: loopIsVisible && stepPhase > 0
+            };
+          });
+
+          return {
+            ...log,
+            revealedActions: loopIsVisible ? log.research.proposed_actions.slice(0, actionCount) : [],
+            visibleFeedback: loopIsVisible
+              ? sliceTextProgressively(log.evaluation.feedback_analysis, feedbackRatio)
+              : "",
+            steps
+          };
+        })
+      : [];
   const selectedModel =
     completedData?.models.find((model) => model.modelId === state.selectedModelId) ??
     completedData?.models[0] ??
@@ -159,26 +310,46 @@ export function WorkspacePage() {
       ? selectedModel.primaryMetricValue.toFixed(4)
       : state.currentStep === 0
         ? null
-        : bestLoop.auc.toFixed(4);
+        : visibleBestLoop?.auc.toFixed(4) ?? bestLoop.auc.toFixed(4);
   const stageKsValue =
     project.status === "completed" && selectedModel
       ? selectedModel.ks.toFixed(4)
       : state.currentStep === 0
         ? null
-        : bestLoop.ks.toFixed(4);
+        : visibleBestLoop?.ks.toFixed(4) ?? bestLoop.ks.toFixed(4);
 
   return (
     <div className="app-shell">
       <Sidebar
-        chats={projectHistory}
-        selectedChat={state.selectedChat}
-        onSelectChat={(name) => {
-          const chat = projectHistory.find((item) => item.name === name);
-          if (!chat) return;
-          const nextProject = getProjectById(chat.projectId);
+        chats={projects.map((item, index) => ({
+          id: index + 1,
+          projectId: item.projectId,
+          name: item.name,
+          time: item.time,
+          status: item.status,
+          summary: item.summary
+        }))}
+        selectedProjectId={state.projectId}
+        onSelectChat={(projectId) => {
+          const nextProject = projects.find((item) => item.projectId === projectId);
+          if (!nextProject) return;
           setState(createAppStateFromProject(nextProject));
         }}
         onNewChat={resetWorkspace}
+        onRenameChat={(projectId, nextName) => {
+          setProjects((current) =>
+            current.map((chat) =>
+              chat.projectId === projectId ? { ...chat, name: nextName } : chat
+            )
+          );
+
+          if (state.projectId === projectId) {
+            setState((current) => ({
+              ...current,
+              selectedChat: nextName
+            }));
+          }
+        }}
       />
 
       <main className="app-main">
@@ -283,8 +454,32 @@ export function WorkspacePage() {
                 }
 
                 const loops = configuredExperimentLoops(state);
-                const runningProject = getProjectById("fraud-transfer-running");
-                const runningState = createAppStateFromProject(runningProject);
+                const runningTemplate =
+                  projects.find((item) => item.projectId === "fraud-transfer-running") ?? project;
+                const nextProject: FrontendProject = {
+                  ...project,
+                  status: "running",
+                  entryView: "running",
+                  summary: "项目进行中，正在持续生成实验过程与结果数据。",
+                  running: {
+                    ...(runningTemplate.running ?? {
+                      currentStep: 1,
+                      overviewMetrics: [],
+                      loops: [],
+                      activeLoopId: 1,
+                      loopLogs: []
+                    }),
+                    loops,
+                    activeLoopId: loops[0]?.id ?? 1
+                  }
+                };
+                const runningState = createAppStateFromProject(nextProject);
+
+                setProjects((current) =>
+                  current.map((item) =>
+                    item.projectId === project.projectId ? nextProject : item
+                  )
+                );
 
                 setState({
                   ...runningState,
@@ -299,7 +494,7 @@ export function WorkspacePage() {
                   validationRatio: state.validationRatio,
                   validationRatioInput: state.validationRatioInput,
                   experimentLoops: loops,
-                  activeLoopId: loops[loops.length - 1]?.id ?? 1
+                  activeLoopId: loops[0]?.id ?? 1
                 });
               }}
             />
@@ -307,9 +502,20 @@ export function WorkspacePage() {
 
           {project.status === "running" ? (
             <ExperimentWorkspace
-              state={state}
-              overviewItems={getRunningOverviewMetrics(project)}
-              loopLogs={runningData?.loopLogs}
+              state={{
+                ...state,
+                experimentLoops: visibleExperimentLoops,
+                activeLoopId:
+                  visibleExperimentLoops.find((loop) => loop.id === state.activeLoopId)?.id ??
+                  visibleExperimentLoops[0]?.id ??
+                  state.activeLoopId
+              }}
+              overviewItems={playbackMetrics}
+              loopLogs={playbackLogs.filter(
+                (log) =>
+                  visibleExperimentLoops.find((loop) => loop.id === log.loop_id) !== undefined
+              )}
+              playbackLoops={playbackLoops}
               workspaceMetrics={workspaceMetrics}
               onChangeView={(view) =>
                 setState((current) => ({ ...current, experimentView: view }))
@@ -347,12 +553,33 @@ export function WorkspacePage() {
                   expandedExperimentId: null
                 }));
               }}
-              onGoDeploy={() =>
-                setState((current) => ({
-                  ...current,
-                  currentStep: 2
-                }))
-              }
+              onGoDeploy={() => {
+                const completedTemplate = getDefaultCompletedTemplate();
+                const nextProject: FrontendProject = {
+                  ...project,
+                  status: "completed",
+                  entryView: "completed",
+                  summary: "项目已完成，当前可选择部署模型并下载对应模型压缩包。",
+                  completed: {
+                    currentStep: 2,
+                    defaultSelectedModelId:
+                      completedTemplate.defaultSelectedModelId,
+                    models: completedTemplate.models
+                  }
+                };
+                const completedState = createAppStateFromProject(nextProject);
+
+                setProjects((current) =>
+                  current.map((item) =>
+                    item.projectId === project.projectId ? nextProject : item
+                  )
+                );
+
+                setState({
+                  ...completedState,
+                  selectedChat: project.name
+                });
+              }}
               onDownload={() =>
                 downloadJson("experiment-records.json", {
                   project: state.selectedChat,

@@ -1,28 +1,57 @@
 import { Icon } from "@/components/common/Icon";
 import type { ProjectChat } from "@/types/app";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   chats: ProjectChat[];
-  selectedChat: string;
-  onSelectChat: (name: string) => void;
+  selectedProjectId: string;
+  onSelectChat: (projectId: string) => void;
   onNewChat: () => void;
+  onRenameChat: (projectId: string, nextName: string) => void;
 }
 
 export function Sidebar({
   chats,
-  selectedChat,
+  selectedProjectId,
   onSelectChat,
-  onNewChat
+  onNewChat,
+  onRenameChat
 }: SidebarProps) {
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
+  useEffect(() => {
+    if (!editingProjectId) return;
+    const current = chats.find((chat) => chat.projectId === editingProjectId);
+    if (!current) {
+      setEditingProjectId(null);
+      setEditingValue("");
+      return;
+    }
+    setEditingValue(current.name);
+  }, [editingProjectId, chats]);
+
+  const submitRename = () => {
+    if (!editingProjectId) return;
+    const nextName = editingValue.trim();
+    if (!nextName) {
+      setEditingProjectId(null);
+      return;
+    }
+    onRenameChat(editingProjectId, nextName);
+    setEditingProjectId(null);
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
-        <div className="sidebar__logo">
-          <Icon name="sparkles" size={20} color="#f7f5ea" />
+        <div className="sidebar__logo sidebar__logo--bank">
+          <div className="sidebar__logo-shape sidebar__logo-shape--top" />
+          <div className="sidebar__logo-shape sidebar__logo-shape--bottom" />
         </div>
         <div>
-          <div className="sidebar__title">MNavigator</div>
-          <div className="sidebar__caption">Intelligent Modeling Copilot</div>
+          <div className="sidebar__title">上海银行建模导航员</div>
+          <div className="sidebar__caption">Modeling Workspace</div>
         </div>
       </div>
 
@@ -37,15 +66,56 @@ export function Sidebar({
           {chats.map((chat) => (
             <button
               key={chat.id}
-              className={`project-item ${selectedChat === chat.name ? "project-item--active" : ""}`}
-              onClick={() => onSelectChat(chat.name)}
+              className={`project-item ${selectedProjectId === chat.projectId ? "project-item--active" : ""}`}
+              onClick={() => onSelectChat(chat.projectId)}
               type="button"
             >
               <div className="project-item__icon">
                 <Icon name="messageSquare" size={15} color="#6f6a5f" />
               </div>
               <div className="project-item__body">
-                <div className="project-item__name">{chat.name}</div>
+                <div className="project-item__title-row">
+                  {editingProjectId === chat.projectId ? (
+                    <input
+                      autoFocus
+                      className="project-item__input"
+                      value={editingValue}
+                      onChange={(event) => setEditingValue(event.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      onBlur={submitRename}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          submitRename();
+                        }
+                        if (event.key === "Escape") {
+                          setEditingProjectId(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="project-item__name">{chat.name}</div>
+                  )}
+                  <span
+                    className="project-item__edit"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setEditingProjectId(chat.projectId);
+                      setEditingValue(chat.name);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setEditingProjectId(chat.projectId);
+                        setEditingValue(chat.name);
+                      }
+                    }}
+                  >
+                    <Icon name="pencil" size={14} color="#7d9ab6" />
+                  </span>
+                </div>
                 <div className="project-item__meta">
                   {chat.time}
                   <span className={`project-item__status project-item__status--${chat.status}`}>

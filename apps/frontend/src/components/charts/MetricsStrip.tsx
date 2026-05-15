@@ -11,9 +11,18 @@ export function MetricsStrip({ state, workspaceMetrics, items }: MetricsStripPro
     return (
       <section className="metric-strip">
         {items.map((item) => (
-          <article key={item.label} className="metric-card">
+          <article
+            key={item.label}
+            className={`metric-card ${"revealed" in item && !item.revealed ? "metric-card--ghost" : ""}`}
+          >
             <div className="metric-card__label">{item.label}</div>
-            <div className="metric-card__value">{item.value}</div>
+            <div
+              className={`metric-card__value ${
+                "revealed" in item && !item.revealed ? "metric-card__value--loading" : ""
+              }`}
+            >
+              {"revealed" in item && !item.revealed ? "......" : item.value}
+            </div>
             <div className="metric-card__meta">{item.meta ?? ""}</div>
           </article>
         ))}

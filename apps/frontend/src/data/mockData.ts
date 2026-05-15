@@ -50,6 +50,43 @@ function cloneLoops(loops: ExperimentLoop[]) {
   }));
 }
 
+function normalizeLoopLogRecord(record: any) {
+  const research = record?.research ?? {};
+  const development = record?.development ?? {};
+  const evaluation = record?.evaluation ?? {};
+  const performance = evaluation?.performance ?? {};
+  const metrics = performance?.metrics ?? {};
+
+  const proposedActions = Array.isArray(research.proposed_actions)
+    ? research.proposed_actions
+    : [
+        research.validation_strategy,
+        research.methodology,
+        research.expected_outcome
+      ].filter(Boolean);
+
+  return {
+    ...record,
+    research: {
+      hypothesis_id: research.hypothesis_id ?? research.hypothesis_name ?? `HYP-${record?.loop_id ?? "000"}`,
+      hypothesis: research.hypothesis ?? research.motivation ?? "",
+      rationale: research.rationale ?? research.analysis_of_history ?? "",
+      proposed_actions: proposedActions
+    },
+    development: {
+      total_evolutions: development.total_evolutions ?? 0,
+      evolving_steps: Array.isArray(development.evolving_steps) ? development.evolving_steps : []
+    },
+    evaluation: {
+      performance: {
+        metrics,
+        baseline_comparison: performance.baseline_comparison ?? {}
+      },
+      feedback_analysis: evaluation.feedback_analysis ?? ""
+    }
+  };
+}
+
 function mapProjectChat(status: ProjectStatus) {
   return status;
 }
@@ -73,7 +110,7 @@ const runningFraud = {
     ...(fraudTransferRunningProjectSource.running as RunningProjectData),
     loops: cloneLoops(fraudTransferRunningLoopsSource as ExperimentLoop[]),
     activeLoopId: fraudTransferRunningProjectSource.running.activeLoopId,
-    loopLogs: fraudTransferRunningLogSource
+    loopLogs: (fraudTransferRunningLogSource as any[]).map(normalizeLoopLogRecord)
   }
 } satisfies FrontendProject;
 
@@ -91,6 +128,64 @@ export const projectHistory: ProjectChat[] = (projectListSource as ProjectChat[]
   ...item,
   status: mapProjectChat(item.status)
 }));
+
+export function getInitialEditableProjects(): FrontendProject[] {
+  return frontendProjects.map((project) => ({
+    ...project,
+    dataset: { ...project.dataset },
+    running: project.running
+      ? {
+          ...project.running,
+          overviewMetrics: project.running.overviewMetrics.map((metric) => ({ ...metric })),
+          loops: cloneLoops(project.running.loops),
+          loopLogs: project.running.loopLogs.map((log) => ({
+            ...log,
+            meta_controller: { ...log.meta_controller },
+            research: {
+              ...log.research,
+              proposed_actions: [...log.research.proposed_actions]
+            },
+            development: {
+              ...log.development,
+              evolving_steps: log.development.evolving_steps.map((step) => ({ ...step }))
+            },
+            evaluation: {
+              ...log.evaluation,
+              performance: {
+                ...log.evaluation.performance,
+                metrics: { ...log.evaluation.performance.metrics },
+                baseline_comparison: {
+                  ...(log.evaluation.performance.baseline_comparison ?? {})
+                }
+              }
+            }
+          }))
+        }
+      : undefined,
+    completed: project.completed
+      ? {
+          ...project.completed,
+          models: project.completed.models.map((model) => ({
+            ...model,
+            package: { ...model.package }
+          }))
+        }
+      : undefined,
+    created: project.created
+      ? {
+          ...project.created,
+          formDefaults: { ...project.created.formDefaults },
+          requirementTemplates: [...project.created.requirementTemplates],
+          validationRules: {
+            experimentRounds: { ...project.created.validationRules.experimentRounds },
+            validationRatio: { ...project.created.validationRules.validationRatio },
+            optimizationTarget: { ...project.created.validationRules.optimizationTarget }
+          },
+          uploadHints: { ...project.created.uploadHints }
+        }
+      : undefined
+  }));
+}
 
 export function getProjectById(projectId: string) {
   return frontendProjects.find((project) => project.projectId === projectId) ?? frontendProjects[0];
@@ -256,4 +351,8 @@ export function getRunningProjectData(project: FrontendProject): RunningProjectD
 
 export function getCreatedProjectData(project: FrontendProject): CreatedProjectData | null {
   return (project.created ?? null) as CreatedProjectData | null;
+}
+
+export function getDefaultCompletedTemplate(): CompletedProjectData {
+  return completedCredit.completed as CompletedProjectData;
 }
