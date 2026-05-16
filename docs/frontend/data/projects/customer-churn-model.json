@@ -31,9 +31,9 @@
         "summary": "综合表现最佳，适合作为标准部署候选。",
         "deploymentSummary": "对类别特征处理更稳定，适合客户流失业务场景。",
         "package": {
-          "packageName": "churn-catboost-v1.zip",
-          "downloadUrl": "/mock-model-packages/churn-catboost-v1.zip",
-          "sizeLabel": "1.4 MB"
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
+          "sizeLabel": "5.5 MB"
         }
       },
       {
@@ -52,9 +52,9 @@
         "summary": "部署包更小，适合资源受限环境。",
         "deploymentSummary": "更适合轻量服务部署和快速联调。",
         "package": {
-          "packageName": "churn-xgboost-v2.zip",
-          "downloadUrl": "/mock-model-packages/churn-xgboost-v2.zip",
-          "sizeLabel": "980 KB"
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
+          "sizeLabel": "5.5 MB"
         }
       }
     ]

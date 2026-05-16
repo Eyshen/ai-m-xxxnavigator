@@ -31,9 +31,9 @@
         "summary": "当前最佳方案，适合作为默认部署候选。",
         "deploymentSummary": "强正则化 LightGBM 特征管线稳定提升了高风险交易排序能力，适合欺诈识别场景。",
         "package": {
-          "packageName": "fraud-xgboost-v3.zip",
-          "downloadUrl": "/mock-model-packages/credit-risk-xgboost-v1.zip",
-          "sizeLabel": "1.3 MB"
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
+          "sizeLabel": "5.5 MB"
         }
       },
       {
@@ -52,9 +52,9 @@
         "summary": "指标略低于推荐方案，但部署体积更小。",
         "deploymentSummary": "适合需要更轻量服务资源占用的在线识别场景。",
         "package": {
-          "packageName": "fraud-lightgbm-v2.zip",
-          "downloadUrl": "/mock-model-packages/credit-risk-lightgbm-v2.zip",
-          "sizeLabel": "1.0 MB"
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
+          "sizeLabel": "5.5 MB"
         }
       }
     ]

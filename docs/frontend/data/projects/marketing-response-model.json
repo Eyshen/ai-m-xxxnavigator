@@ -31,9 +31,9 @@
         "summary": "综合收益和稳定性最佳，适合结果汇报。",
         "deploymentSummary": "适合营销响应率分析和后续策略回访使用。",
         "package": {
-          "packageName": "marketing-ensemble-v2.zip",
-          "downloadUrl": "/mock-model-packages/marketing-ensemble-v2.zip",
-          "sizeLabel": "1.1 MB"
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
+          "sizeLabel": "5.5 MB"
         }
       },
       {
@@ -52,9 +52,9 @@
         "summary": "训练速度快，适合快速迭代场景。",
         "deploymentSummary": "适合轻量营销实验和快速 AB 演示。",
         "package": {
-          "packageName": "marketing-lightgbm-v1.zip",
-          "downloadUrl": "/mock-model-packages/marketing-lightgbm-v1.zip",
-          "sizeLabel": "890 KB"
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
+          "sizeLabel": "5.5 MB"
         }
       }
     ]

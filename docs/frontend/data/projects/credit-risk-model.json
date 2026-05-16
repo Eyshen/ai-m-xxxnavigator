@@ -27,8 +27,8 @@
         "summary": "当前最佳方案，适合直接进入部署评审。",
         "deploymentSummary": "",
         "package": {
-          "packageName": "credit-risk-xgboost-v1.zip",
-          "downloadUrl": "/mock-model-packages/credit-risk-xgboost-v1.zip",
+          "packageName": "model_test_experiment_5.zip",
+          "downloadUrl": "/mock-model-packages/model_test_experiment_5.zip",
           "sizeLabel": "5.5 MB"
         }
       }
