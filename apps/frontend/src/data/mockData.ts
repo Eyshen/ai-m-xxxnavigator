@@ -1,15 +1,19 @@
 import type {
   CompletedProjectData,
+  CompletedReviewExperimentSnapshot,
+  CompletedReviewIntakeSnapshot,
   CreatedProjectData,
   DeliveryOption,
   ExperimentLoop,
   FrontendAppState,
   FrontendProject,
+  OptimizationMetricName,
   OverviewMetricItem,
   ProjectChat,
   ProjectStatus,
   RunningProjectData,
   StageDefinition,
+  TrainingLoopLog,
   WorkspaceMetrics
 } from "@/types/app";
 
@@ -142,11 +146,129 @@ function withDatasetFallback<T extends { dataset: FrontendProject["dataset"] }>(
   };
 }
 
-const completedCredit = withDatasetFallback(creditRiskProjectSource) as FrontendProject;
-const completedChurn = withDatasetFallback(customerChurnProjectSource) as FrontendProject;
-const completedMarketing = withDatasetFallback(marketingResponseProjectSource) as FrontendProject;
+function cloneTrainingLoopLogs(logs: TrainingLoopLog[]) {
+  return logs.map((log) => ({
+    ...log,
+    meta_controller: { ...log.meta_controller },
+    research: {
+      ...log.research,
+      proposed_actions: [...log.research.proposed_actions]
+    },
+    development: {
+      ...log.development,
+      evolving_steps: log.development.evolving_steps.map((step) => ({ ...step }))
+    },
+    evaluation: {
+      ...log.evaluation,
+      performance: {
+        ...log.evaluation.performance,
+        metrics: { ...log.evaluation.performance.metrics },
+        baseline_comparison: {
+          ...(log.evaluation.performance.baseline_comparison ?? {})
+        }
+      }
+    }
+  }));
+}
 
-const completedFraud = withDatasetFallback(fraudTransferRunningProjectSource) as FrontendProject;
+function getBestLoopId(loops: ExperimentLoop[]) {
+  if (loops.length === 0) {
+    return 0;
+  }
+
+  return loops.reduce((winner, loop) => (loop.auc > winner.auc ? loop : winner), loops[0]).id;
+}
+
+const completedRequirementMap: Record<string, string> = {
+  "credit-risk-model":
+    "请基于客户交易、收入、存款和信用额度数据，建立信用卡逾期风险预测模型，重点识别未来30天可能逾期的高风险客户，并输出可解释的关键影响因素。",
+  "customer-churn-model":
+    "请基于客户画像、服务记录、交易频次和套餐使用行为，建立客户流失预测模型，重点识别未来30天存在流失风险的客户，并给出可解释的关键驱动因素。",
+  "marketing-response-model":
+    "请基于用户画像、活动触达、历史转化和渠道交互数据，建立营销响应率预测模型，重点识别高响应客群并输出便于复盘的关键特征说明。",
+  "fraud-transfer-running":
+    "请基于转账行为、设备指纹、账户关系和时序特征，建立欺诈交易识别模型，重点识别高风险转账并输出适合风控评审的关键影响因素。"
+};
+
+function buildCompletedIntakeSnapshot(
+  project: FrontendProject,
+  experimentRounds: number,
+  optimizationMetric: OptimizationMetricName = "AUC"
+): CompletedReviewIntakeSnapshot {
+  return {
+    modelingRequirement:
+      completedRequirementMap[project.projectId] ?? demoExperimentRun.prompt.goal,
+    experimentRounds,
+    optimizationMetric,
+    optimizationTarget: 0.95,
+    validationRatio: 20,
+    uploadedFile: project.dataset.name
+  };
+}
+
+function buildCompletedExperimentSnapshot(
+  loops: ExperimentLoop[],
+  loopLogs: TrainingLoopLog[] = []
+): CompletedReviewExperimentSnapshot {
+  return {
+    loops: cloneLoops(loops),
+    activeLoopId: getBestLoopId(loops),
+    loopLogs: cloneTrainingLoopLogs(loopLogs)
+  };
+}
+
+function withCompletedReview(project: FrontendProject, experimentSnapshot: CompletedReviewExperimentSnapshot) {
+  const completed = project.completed as CompletedProjectData;
+
+  return {
+    ...project,
+    completed: {
+      ...completed,
+      intakeSnapshot: buildCompletedIntakeSnapshot(project, experimentSnapshot.loops.length),
+      experimentSnapshot
+    }
+  } satisfies FrontendProject;
+}
+
+const fraudReviewLoops = toRunningExperimentLoops(
+  cloneLoops(fraudTransferRunningLoopsSource as ExperimentLoop[]),
+  fraudTransferRunningLogSource as any[]
+);
+const fraudReviewLogs = (fraudTransferRunningLogSource as any[]).map(normalizeLoopLogRecord) as TrainingLoopLog[];
+const fraudRunningTemplate: RunningProjectData = {
+  currentStep: 1,
+  overviewMetrics: [
+    { label: "识别字段", value: "61", meta: "自动字段识别" },
+    { label: "扫描样本", value: "300,000", meta: "交易样本规模" },
+    { label: "成功 LOOP", value: "2", meta: "收益成立方案" },
+    { label: "最佳 AUC", value: "0.912", meta: "当前最优模型" },
+    { label: "结果项", value: "6", meta: "可追溯实验记录" }
+  ],
+  loops: cloneLoops(fraudReviewLoops),
+  activeLoopId: 2,
+  loopLogs: cloneTrainingLoopLogs(fraudReviewLogs)
+};
+
+const completedCredit = withCompletedReview(
+  withDatasetFallback(creditRiskProjectSource) as FrontendProject,
+  buildCompletedExperimentSnapshot(defaultExperimentLoops)
+);
+const completedChurn = withCompletedReview(
+  withDatasetFallback(customerChurnProjectSource) as FrontendProject,
+  buildCompletedExperimentSnapshot(defaultExperimentLoops)
+);
+const completedMarketing = withCompletedReview(
+  withDatasetFallback(marketingResponseProjectSource) as FrontendProject,
+  buildCompletedExperimentSnapshot(defaultExperimentLoops)
+);
+
+const completedFraud = {
+  ...withCompletedReview(
+    withDatasetFallback(fraudTransferRunningProjectSource) as FrontendProject,
+    buildCompletedExperimentSnapshot(fraudReviewLoops, fraudReviewLogs)
+  ),
+  running: fraudRunningTemplate
+} satisfies FrontendProject;
 
 const createdProject = newModelingProjectSource as FrontendProject;
 
@@ -172,28 +294,7 @@ export function getInitialEditableProjects(): FrontendProject[] {
           ...project.running,
           overviewMetrics: project.running.overviewMetrics.map((metric) => ({ ...metric })),
           loops: cloneLoops(project.running.loops),
-          loopLogs: project.running.loopLogs.map((log) => ({
-            ...log,
-            meta_controller: { ...log.meta_controller },
-            research: {
-              ...log.research,
-              proposed_actions: [...log.research.proposed_actions]
-            },
-            development: {
-              ...log.development,
-              evolving_steps: log.development.evolving_steps.map((step) => ({ ...step }))
-            },
-            evaluation: {
-              ...log.evaluation,
-              performance: {
-                ...log.evaluation.performance,
-                metrics: { ...log.evaluation.performance.metrics },
-                baseline_comparison: {
-                  ...(log.evaluation.performance.baseline_comparison ?? {})
-                }
-              }
-            }
-          }))
+          loopLogs: cloneTrainingLoopLogs(project.running.loopLogs)
         }
       : undefined,
     completed: project.completed
@@ -202,7 +303,17 @@ export function getInitialEditableProjects(): FrontendProject[] {
           models: project.completed.models.map((model) => ({
             ...model,
             package: { ...model.package }
-          }))
+          })),
+          intakeSnapshot: project.completed.intakeSnapshot
+            ? { ...project.completed.intakeSnapshot }
+            : undefined,
+          experimentSnapshot: project.completed.experimentSnapshot
+            ? {
+                ...project.completed.experimentSnapshot,
+                loops: cloneLoops(project.completed.experimentSnapshot.loops),
+                loopLogs: cloneTrainingLoopLogs(project.completed.experimentSnapshot.loopLogs)
+              }
+            : undefined
         }
       : undefined,
     created: project.created
@@ -281,25 +392,28 @@ function getStateFromRunningProject(project: FrontendProject): FrontendAppState 
 
 function getStateFromCompletedProject(project: FrontendProject): FrontendAppState {
   const completed = project.completed as CompletedProjectData;
+  const intakeSnapshot = completed.intakeSnapshot;
+  const experimentSnapshot = completed.experimentSnapshot;
+  const experimentLoops = experimentSnapshot?.loops ?? defaultExperimentLoops;
   return {
     projectId: project.projectId,
     projectStatus: project.status,
     currentStep: completed.currentStep,
-    uploadedFile: project.dataset.name,
-    modelingRequirement: demoExperimentRun.prompt.goal,
+    uploadedFile: intakeSnapshot?.uploadedFile ?? project.dataset.name,
+    modelingRequirement: intakeSnapshot?.modelingRequirement ?? demoExperimentRun.prompt.goal,
     requirementSubmitted: true,
-    experimentRounds: 5,
-    experimentRoundsInput: "5",
-    optimizationMetric: "AUC",
-    optimizationTarget: 0.95,
-    optimizationTargetInput: "0.95",
-    validationRatio: 20,
-    validationRatioInput: "20",
+    experimentRounds: intakeSnapshot?.experimentRounds ?? experimentLoops.length,
+    experimentRoundsInput: String(intakeSnapshot?.experimentRounds ?? experimentLoops.length),
+    optimizationMetric: intakeSnapshot?.optimizationMetric ?? "AUC",
+    optimizationTarget: intakeSnapshot?.optimizationTarget ?? 0.95,
+    optimizationTargetInput: String(intakeSnapshot?.optimizationTarget ?? 0.95),
+    validationRatio: intakeSnapshot?.validationRatio ?? 20,
+    validationRatioInput: String(intakeSnapshot?.validationRatio ?? 20),
     experimentView: "result",
     successfulOnly: false,
-    activeLoopId: 0,
+    activeLoopId: experimentSnapshot?.activeLoopId ?? getBestLoopId(experimentLoops),
     expandedExperimentId: null,
-    experimentLoops: cloneLoops(defaultExperimentLoops),
+    experimentLoops: cloneLoops(experimentLoops),
     isProcessing: false,
     selectedChat: project.name,
     selectedModelId: completed.defaultSelectedModelId

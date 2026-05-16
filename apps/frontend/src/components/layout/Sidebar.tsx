@@ -45,9 +45,8 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
-        <div className="sidebar__logo sidebar__logo--bank">
-          <div className="sidebar__logo-shape sidebar__logo-shape--top" />
-          <div className="sidebar__logo-shape sidebar__logo-shape--bottom" />
+        <div className="sidebar__logo">
+          <img className="sidebar__logo-image" src="/shanghaiyinhanglogo.png" alt="上海银行 logo" />
         </div>
         <div>
           <div className="sidebar__title">上海银行端到端多Agent自动化建模</div>

@@ -4,30 +4,41 @@ import type { StageDefinition, StageId } from "@/types/app";
 interface StageProgressProps {
   stages: StageDefinition[];
   currentStep: StageId;
+  selectedStageId?: StageId;
   uploadedFile: string | null;
   experimentRounds: number;
   validationRatio: number;
   metricName: string;
   bestMetric: string | null;
+  interactive?: boolean;
+  forceCompletedProgress?: boolean;
+  onSelectStage?: (stageId: StageId) => void;
 }
 
 export function StageProgress({
   stages,
   currentStep,
+  selectedStageId,
   uploadedFile,
   experimentRounds,
   validationRatio,
   metricName,
-  bestMetric
+  bestMetric,
+  interactive = false,
+  forceCompletedProgress = false,
+  onSelectStage
 }: StageProgressProps) {
   const hasUploadedFile = Boolean(uploadedFile);
+  const displayStageId = selectedStageId ?? currentStep;
   const progress =
-    currentStep === 0 && !hasUploadedFile
+    forceCompletedProgress
+      ? 100
+      : currentStep === 0 && !hasUploadedFile
       ? 0
       : ((currentStep + 1) / stages.length) * 100;
-  const currentStage = stages[currentStep];
+  const currentStage = stages[displayStageId];
   const summaryItems =
-    currentStep === 0
+    displayStageId === 0
       ? [
           { label: "训练数据", value: uploadedFile ? "已上传" : "待上传" },
           { label: "优化指标", value: metricName },
@@ -47,7 +58,7 @@ export function StageProgress({
           <div className="stage-card__eyebrow">Workflow Progress</div>
           <div className="stage-card__title">轻量可部署的三阶段建模流程</div>
           <div className="stage-card__summary-text">
-            当前阶段: {currentStage.name} · {currentStage.desc}
+            {interactive ? "当前查看" : "当前阶段"}: {currentStage.name} · {currentStage.desc}
           </div>
         </div>
         <div className="stage-card__headline">
@@ -65,10 +76,13 @@ export function StageProgress({
       </div>
       <div className="stage-card__grid">
         {stages.map((stage, index) => {
-          const isDone = currentStep > stage.id;
-          const isActive = currentStep === stage.id;
+          const isActive = displayStageId === stage.id;
+          const isDone = forceCompletedProgress ? !isActive : currentStep > stage.id;
+          const isDisabled = forceCompletedProgress ? false : currentStep < stage.id;
           const stagePercent =
-            currentStep === 0 && !hasUploadedFile && stage.id === 0
+            forceCompletedProgress
+              ? 100
+              : currentStep === 0 && !hasUploadedFile && stage.id === 0
               ? 0
               : currentStep > stage.id
                 ? 100
@@ -77,11 +91,14 @@ export function StageProgress({
                   : 0;
 
           return (
-            <div
+            <button
               key={stage.id}
-              className={`stage-node ${currentStep < stage.id ? "stage-node--disabled" : ""} ${
+              className={`stage-node ${isDisabled ? "stage-node--disabled" : ""} ${
                 isActive ? "stage-node--active" : ""
-              } ${isDone ? "stage-node--done" : ""}`}
+              } ${isDone ? "stage-node--done" : ""} ${interactive ? "stage-node--interactive" : ""}`}
+              disabled={!interactive}
+              onClick={() => onSelectStage?.(stage.id)}
+              type="button"
             >
               <div className="stage-node__header">
                 <div
@@ -107,9 +124,17 @@ export function StageProgress({
               </div>
               <div className="stage-node__desc">{stage.desc}</div>
               <div className="stage-node__status">
-                {isDone ? "已完成" : isActive ? "进行中" : "未开始"}
+                {forceCompletedProgress
+                  ? isActive
+                    ? "查看中"
+                    : "已完成"
+                  : isDone
+                    ? "已完成"
+                    : isActive
+                      ? "进行中"
+                      : "未开始"}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

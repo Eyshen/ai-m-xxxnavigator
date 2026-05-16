@@ -121,40 +121,20 @@ svg {
 }
 
 .sidebar__logo {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #0b1730, #1ec8ff);
-  box-shadow: 0 12px 28px rgba(30, 200, 255, 0.24);
-}
-
-.sidebar__logo--bank {
-  position: relative;
+  flex: 0 0 auto;
   overflow: hidden;
+  width: 48px;
+  aspect-ratio: 98 / 98;
+  border-radius: 14px;
   background: #1d4fa4;
   box-shadow: 0 12px 28px rgba(17, 54, 118, 0.3);
 }
 
-.sidebar__logo-shape {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 28px;
-  background: linear-gradient(180deg, #ffffff 0%, #eef2f9 100%);
-}
-
-.sidebar__logo-shape--top {
-  top: 8px;
-  height: 12px;
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-}
-
-.sidebar__logo-shape--bottom {
-  bottom: 7px;
-  height: 16px;
-  clip-path: polygon(0% 0%, 100% 0%, 62% 45%, 100% 100%, 0% 100%, 38% 45%);
+.sidebar__logo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .sidebar__title {
@@ -587,16 +567,22 @@ svg {
 }
 
 .stage-node {
+  width: 100%;
   padding: 18px 16px;
   border: 1px solid rgba(120, 228, 255, 0.08);
   border-radius: 22px;
   background: rgba(10, 20, 38, 0.78);
+  appearance: none;
   text-align: left;
   transition:
     opacity 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     background 0.2s ease;
+}
+
+.stage-node:disabled {
+  opacity: 1;
 }
 
 .stage-node--disabled {
@@ -610,6 +596,15 @@ svg {
 
 .stage-node--done {
   border-color: rgba(93, 247, 192, 0.18);
+}
+
+.stage-node--interactive {
+  cursor: pointer;
+}
+
+.stage-node--interactive:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(30, 200, 255, 0.2);
 }
 
 .stage-node__header {
@@ -886,6 +881,10 @@ svg {
   color: #5e7a95;
 }
 
+.input-textarea--readonly {
+  white-space: pre-wrap;
+}
+
 .input-textarea:focus,
 .field__select:focus,
 .field__input:focus {
@@ -981,6 +980,18 @@ svg {
   color: #ffb3c0;
 }
 
+.field__static {
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid rgba(120, 228, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(6, 15, 28, 0.88);
+  color: var(--text-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
 .config-footnote {
   margin-top: 18px;
   padding: 14px 16px;
@@ -1054,6 +1065,16 @@ svg {
 
 .dropzone--busy {
   opacity: 0.82;
+}
+
+.dropzone--readonly {
+  cursor: default;
+}
+
+.dropzone--readonly:hover {
+  transform: none;
+  border-color: rgba(120, 228, 255, 0.22);
+  background: linear-gradient(135deg, rgba(8, 18, 34, 0.88), rgba(12, 26, 48, 0.92));
 }
 
 .dropzone__icon {

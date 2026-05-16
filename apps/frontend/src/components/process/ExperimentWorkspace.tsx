@@ -15,6 +15,7 @@ interface ExperimentWorkspaceProps {
   overviewItems?: OverviewMetricItem[];
   loopLogs?: RunningPlaybackLog[] | TrainingLoopLog[];
   playbackLoops?: RunningPlaybackLoopItem[];
+  reviewMode?: boolean;
   playbackComplete?: boolean;
   canShowFocusedDetails?: boolean;
   currentModelLoop?: ExperimentLoop;
@@ -61,6 +62,7 @@ export function ExperimentWorkspace({
   overviewItems,
   loopLogs,
   playbackLoops,
+  reviewMode = false,
   playbackComplete = false,
   canShowFocusedDetails = true,
   currentModelLoop,
@@ -185,10 +187,12 @@ export function ExperimentWorkspace({
             <span className={`switch-button__dot ${state.successfulOnly ? "switch-button__dot--on" : ""}`} />
             只看成功假设
           </button>
-          <button className="btn btn--ghost" onClick={onDownload} type="button">
-            <Icon name="download" size={14} color="#6c6258" />
-            下载实验记录
-          </button>
+          {!reviewMode ? (
+            <button className="btn btn--ghost" onClick={onDownload} type="button">
+              <Icon name="download" size={14} color="#6c6258" />
+              下载实验记录
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -448,13 +452,17 @@ export function ExperimentWorkspace({
             <div className="result-view">
               <div className="result-summary">
                 <div>
-                  <div className="result-summary__label">推荐交付方案</div>
+                  <div className="result-summary__label">
+                    {reviewMode ? "自动实验结果回看" : "推荐交付方案"}
+                  </div>
                   <div className="result-summary__title">{bestLoopSummary}</div>
                 </div>
-                <button className="btn btn--primary" onClick={onGoDeploy} type="button">
-                  <Icon name="rocket" size={14} color="#fff8ee" />
-                  进入模型交付
-                </button>
+                {!reviewMode ? (
+                  <button className="btn btn--primary" onClick={onGoDeploy} type="button">
+                    <Icon name="rocket" size={14} color="#fff8ee" />
+                    进入模型交付
+                  </button>
+                ) : null}
               </div>
 
               <div className="result-table">
@@ -505,10 +513,12 @@ export function ExperimentWorkspace({
 
       <div className="workspace-footer">
         <div className="workspace-footer__note">{footerSummary}</div>
-        <button className="btn btn--secondary" onClick={onAddLoop} type="button">
-          <Icon name="plus" size={14} color="#6c6258" />
-          继续一轮实验
-        </button>
+        {!reviewMode ? (
+          <button className="btn btn--secondary" onClick={onAddLoop} type="button">
+            <Icon name="plus" size={14} color="#6c6258" />
+            继续一轮实验
+          </button>
+        ) : null}
       </div>
     </section>
   );

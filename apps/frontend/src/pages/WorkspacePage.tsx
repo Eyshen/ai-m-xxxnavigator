@@ -1,4 +1,5 @@
 import { DataIntakePanel } from "@/components/forms/DataIntakePanel";
+import { ReadOnlyDataIntakePanel } from "@/components/forms/ReadOnlyDataIntakePanel";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ExperimentWorkspace } from "@/components/process/ExperimentWorkspace";
@@ -149,6 +150,8 @@ type PlaybackPhase = (typeof PLAYBACK_PHASES)[number];
 export function WorkspacePage() {
   const [state, setState] = useState<FrontendAppState>(initialAppState);
   const [projects, setProjects] = useState<FrontendProject[]>(getInitialEditableProjects());
+  const [completedReviewStage, setCompletedReviewStage] =
+    useState<FrontendAppState["currentStep"]>(2);
   const [playbackState, setPlaybackState] = useState<{
     activeLoopIndex: number;
     focusedLoopIndex: number;
@@ -162,6 +165,12 @@ export function WorkspacePage() {
     projects.find((item) => item.projectId === state.projectId) ?? projects[0] ?? initialProject;
   const validationErrors = getValidationErrors(state);
   const configValid = isConfigValid(state);
+
+  useEffect(() => {
+    setCompletedReviewStage(
+      project.status === "completed" ? 2 : project.status === "running" ? 1 : 0
+    );
+  }, [project.projectId, project.status]);
 
   useEffect(() => {
     if (!state.isProcessing) {
@@ -446,6 +455,7 @@ export function WorkspacePage() {
     completedData?.models.find((model) => model.modelId === state.selectedModelId) ??
     completedData?.models[0] ??
     null;
+  const completedExperimentLogs = completedData?.experimentSnapshot?.loopLogs ?? [];
 
   const stageMetricName =
     project.status === "completed" && selectedModel
@@ -494,7 +504,7 @@ export function WorkspacePage() {
       <main className="app-main">
         <Topbar
           title={state.selectedChat}
-          currentStep={state.currentStep}
+          currentStep={project.status === "completed" ? completedReviewStage : state.currentStep}
           uploadedFile={state.uploadedFile}
           isProcessing={state.isProcessing}
         />
@@ -503,11 +513,17 @@ export function WorkspacePage() {
           <StageProgress
             stages={workflowStages}
             currentStep={state.currentStep}
+            selectedStageId={project.status === "completed" ? completedReviewStage : undefined}
             uploadedFile={state.uploadedFile}
             experimentRounds={state.experimentRounds}
             validationRatio={state.validationRatio}
             metricName={stageMetricName}
             bestMetric={stageMetricValue}
+            interactive={project.status === "completed"}
+            forceCompletedProgress={project.status === "completed"}
+            onSelectStage={
+              project.status === "completed" ? (stageId) => setCompletedReviewStage(stageId) : undefined
+            }
           />
 
           {project.status === "created" ? (
@@ -714,7 +730,20 @@ export function WorkspacePage() {
                     currentStep: 2,
                     defaultSelectedModelId:
                       completedTemplate.defaultSelectedModelId,
-                    models: completedTemplate.models
+                    models: completedTemplate.models,
+                    intakeSnapshot: {
+                      modelingRequirement: state.modelingRequirement,
+                      experimentRounds: state.experimentRounds,
+                      optimizationMetric: state.optimizationMetric,
+                      optimizationTarget: state.optimizationTarget,
+                      validationRatio: state.validationRatio,
+                      uploadedFile: state.uploadedFile ?? project.dataset.name
+                    },
+                    experimentSnapshot: {
+                      loops: cloneExperimentLoops(state.experimentLoops),
+                      activeLoopId: bestLoop.id,
+                      loopLogs: runningData?.loopLogs ?? []
+                    }
                   }
                 };
                 const completedState = createAppStateFromProject(nextProject);
@@ -729,6 +758,7 @@ export function WorkspacePage() {
                   ...completedState,
                   selectedChat: project.name
                 });
+                setCompletedReviewStage(2);
               }}
               onDownload={() =>
                 downloadJson("experiment-records.json", {
@@ -740,7 +770,55 @@ export function WorkspacePage() {
             />
           ) : null}
 
-          {project.status === "completed" && selectedModel ? (
+          {project.status === "completed" && selectedModel && completedReviewStage === 0 ? (
+            <ReadOnlyDataIntakePanel
+              state={state}
+              datasetSummary={datasetSummary}
+            />
+          ) : null}
+
+          {project.status === "completed" && selectedModel && completedReviewStage === 1 ? (
+            <ExperimentWorkspace
+              state={state}
+              loopLogs={completedExperimentLogs}
+              reviewMode
+              playbackComplete
+              canShowFocusedDetails
+              bestLoop={bestLoop}
+              completedLoopCount={state.experimentLoops.length}
+              workspaceMetrics={workspaceMetrics}
+              onChangeView={(view) =>
+                setState((current) => ({ ...current, experimentView: view }))
+              }
+              onToggleSuccessful={() =>
+                setState((current) => ({
+                  ...current,
+                  successfulOnly: !current.successfulOnly,
+                  expandedExperimentId: null
+                }))
+              }
+              onSelectLoop={(loopId) =>
+                setState((current) => ({
+                  ...current,
+                  activeLoopId: loopId,
+                  experimentView: "process",
+                  expandedExperimentId: null
+                }))
+              }
+              onToggleExperiment={(experimentId) =>
+                setState((current) => ({
+                  ...current,
+                  expandedExperimentId:
+                    current.expandedExperimentId === experimentId ? null : experimentId
+                }))
+              }
+              onAddLoop={() => {}}
+              onGoDeploy={() => {}}
+              onDownload={() => {}}
+            />
+          ) : null}
+
+          {project.status === "completed" && selectedModel && completedReviewStage === 2 ? (
             <CompletedProjectResult
               project={project}
               selectedModel={selectedModel}

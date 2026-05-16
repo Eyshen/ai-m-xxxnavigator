@@ -197,10 +197,27 @@ export interface RunningProjectData {
   loopLogs: TrainingLoopLog[];
 }
 
+export interface CompletedReviewIntakeSnapshot {
+  modelingRequirement: string;
+  experimentRounds: number;
+  optimizationMetric: OptimizationMetricName;
+  optimizationTarget: number;
+  validationRatio: number;
+  uploadedFile: string;
+}
+
+export interface CompletedReviewExperimentSnapshot {
+  loops: ExperimentLoop[];
+  activeLoopId: number;
+  loopLogs: TrainingLoopLog[];
+}
+
 export interface CompletedProjectData {
   currentStep: StageId;
   models: DeployableModel[];
   defaultSelectedModelId: string;
+  intakeSnapshot?: CompletedReviewIntakeSnapshot;
+  experimentSnapshot?: CompletedReviewExperimentSnapshot;
 }
 
 export interface CreatedProjectData {
