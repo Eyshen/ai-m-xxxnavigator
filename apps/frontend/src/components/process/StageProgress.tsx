@@ -22,7 +22,11 @@ export function StageProgress({
   bestMetric,
   bestKs
 }: StageProgressProps) {
-  const progress = ((currentStep + 1) / stages.length) * 100;
+  const hasUploadedFile = Boolean(uploadedFile);
+  const progress =
+    currentStep === 0 && !hasUploadedFile
+      ? 0
+      : ((currentStep + 1) / stages.length) * 100;
   const currentStage = stages[currentStep];
   const summaryItems =
     currentStep === 0
@@ -67,7 +71,13 @@ export function StageProgress({
           const isDone = currentStep > stage.id;
           const isActive = currentStep === stage.id;
           const stagePercent =
-            currentStep > stage.id ? 100 : currentStep === stage.id ? Math.round(progress) : 0;
+            currentStep === 0 && !hasUploadedFile && stage.id === 0
+              ? 0
+              : currentStep > stage.id
+                ? 100
+                : currentStep === stage.id
+                  ? Math.round(progress)
+                  : 0;
 
           return (
             <div

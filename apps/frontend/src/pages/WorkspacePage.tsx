@@ -121,11 +121,28 @@ function sliceTextProgressively(text: string, ratio: number) {
   return safe.slice(0, length);
 }
 
+const PLAYBACK_PHASES = [
+  "intro",
+  "meta",
+  "research",
+  "actions",
+  "steps",
+  "evaluation",
+  "feedback",
+  "done"
+] as const;
+
+type PlaybackPhase = (typeof PLAYBACK_PHASES)[number];
+
 export function WorkspacePage() {
   const [state, setState] = useState<FrontendAppState>(initialAppState);
   const [projects, setProjects] = useState<FrontendProject[]>(getInitialEditableProjects());
-  const [visibleLoopCount, setVisibleLoopCount] = useState<number | null>(null);
-  const [logRevealTick, setLogRevealTick] = useState(0);
+  const [playbackState, setPlaybackState] = useState<{
+    activeLoopIndex: number;
+    phase: PlaybackPhase;
+    stepRevealIndex: number;
+    textTick: number;
+  } | null>(null);
   const project =
     projects.find((item) => item.projectId === state.projectId) ?? projects[0] ?? initialProject;
   const validationErrors = getValidationErrors(state);
@@ -148,44 +165,67 @@ export function WorkspacePage() {
 
   useEffect(() => {
     if (project.status !== "running") {
-      setVisibleLoopCount(null);
-      setLogRevealTick(0);
+      setPlaybackState(null);
       return;
     }
 
     if (state.experimentLoops.length === 0) {
-      setVisibleLoopCount(0);
+      setPlaybackState(null);
       return;
     }
 
-    setVisibleLoopCount(1);
-    setLogRevealTick(0);
-    let current = 1;
-    const timer = window.setInterval(() => {
-      current += 1;
-      setVisibleLoopCount((prev) => {
-        const next = prev === null ? current : Math.max(prev, current);
-        return Math.min(next, state.experimentLoops.length);
-      });
-      if (current >= state.experimentLoops.length) {
-        window.clearInterval(timer);
-      }
-    }, 850);
-
-    return () => window.clearInterval(timer);
+    setPlaybackState({
+      activeLoopIndex: 0,
+      phase: "intro",
+      stepRevealIndex: 0,
+      textTick: 0
+    });
   }, [project.status, state.projectId, state.experimentLoops]);
 
   useEffect(() => {
-    if (project.status !== "running") {
+    if (project.status !== "running" || !playbackState) {
       return;
     }
 
-    const timer = window.setInterval(() => {
-      setLogRevealTick((prev) => prev + 1);
-    }, 180);
+    const timer = window.setTimeout(() => {
+      setPlaybackState((current) => {
+        if (!current) return current;
 
-    return () => window.clearInterval(timer);
-  }, [project.status, state.projectId, state.activeLoopId]);
+        const currentPhaseIndex = PLAYBACK_PHASES.indexOf(current.phase);
+        const currentLoop = state.experimentLoops[current.activeLoopIndex];
+        const stepCount = currentLoop?.components.length ?? 0;
+
+        if (current.phase === "steps" && current.stepRevealIndex < stepCount) {
+          return {
+            ...current,
+            stepRevealIndex: current.stepRevealIndex + 1,
+            textTick: current.textTick + 1
+          };
+        }
+
+        if (current.phase === "done") {
+          if (current.activeLoopIndex >= state.experimentLoops.length - 1) {
+            return current;
+          }
+
+          return {
+            activeLoopIndex: current.activeLoopIndex + 1,
+            phase: "intro",
+            stepRevealIndex: 0,
+            textTick: 0
+          };
+        }
+
+        return {
+          ...current,
+          phase: PLAYBACK_PHASES[currentPhaseIndex + 1] ?? "done",
+          textTick: current.textTick + 1
+        };
+      });
+    }, playbackState.phase === "steps" ? 900 : 700);
+
+    return () => window.clearTimeout(timer);
+  }, [project.status, playbackState, state.experimentLoops]);
 
   const resetWorkspace = () => {
     const nextCreatedProject: FrontendProject = {
@@ -216,17 +256,21 @@ export function WorkspacePage() {
   const runningData = getRunningProjectData(project);
   const createdData = getCreatedProjectData(project);
   const completedData = getCompletedProjectData(project);
+  const revealedLoopCount =
+    project.status === "running" && playbackState
+      ? Math.min(playbackState.activeLoopIndex + 1, state.experimentLoops.length)
+      : state.experimentLoops.length;
   const visibleExperimentLoops =
-    project.status === "running" && visibleLoopCount !== null
-      ? state.experimentLoops.slice(0, visibleLoopCount)
+    project.status === "running"
+      ? state.experimentLoops.slice(0, revealedLoopCount)
       : state.experimentLoops;
   const playbackLoops: RunningPlaybackLoopItem[] =
     project.status === "running"
       ? state.experimentLoops.map((loop, index) => {
-          const isVisible = visibleLoopCount !== null && index < visibleLoopCount;
-          const allLoopsRevealed =
-            visibleLoopCount !== null && visibleLoopCount >= state.experimentLoops.length;
-          const isCurrent = !allLoopsRevealed && index === (visibleLoopCount ?? 1) - 1;
+          const isVisible = index < revealedLoopCount;
+          const allLoopsRevealed = revealedLoopCount >= state.experimentLoops.length;
+          const isCurrent =
+            !allLoopsRevealed && playbackState && index === playbackState.activeLoopIndex;
           if (!isVisible) {
             return {
               id: loop.id,
@@ -244,6 +288,10 @@ export function WorkspacePage() {
           };
         })
       : [];
+  const visiblePlaybackLoops =
+    project.status === "running"
+      ? playbackLoops.filter((loop, index) => index < revealedLoopCount)
+      : playbackLoops;
   const visibleBestLoop = visibleExperimentLoops.reduce(
     (winner, loop) => (loop.auc > winner.auc ? loop : winner),
     visibleExperimentLoops[0] ?? state.experimentLoops[0]
@@ -253,7 +301,7 @@ export function WorkspacePage() {
       ? (getRunningOverviewMetrics(project) ?? []).map((item, index) => ({
           ...item,
           value:
-            index === 2 && visibleLoopCount !== null
+            index === 2
               ? String(playbackLoops.filter((loop) => loop.status === "success").length)
               : index === 3 && visibleBestLoop
                 ? visibleBestLoop.auc.toFixed(4)
@@ -262,27 +310,45 @@ export function WorkspacePage() {
                       visibleExperimentLoops.flatMap((loop) => loop.components).length
                     )
                   : item.value,
-          revealed: visibleLoopCount !== null && visibleLoopCount >= Math.min(index + 1, 2)
+          revealed: revealedLoopCount >= Math.min(index + 1, 2)
         }))
       : [];
   const playbackLogs: RunningPlaybackLog[] =
     project.status === "running"
       ? (runningData?.loopLogs ?? []).map((log, index) => {
-          const loopIsVisible = visibleLoopCount !== null && index < visibleLoopCount;
-          const phaseBase = Math.max(0, logRevealTick - index * 10);
-          const actionCount = loopIsVisible ? Math.min(log.research.proposed_actions.length, Math.max(0, phaseBase - 1)) : 0;
-          const feedbackRatio = loopIsVisible ? Math.min(1, Math.max(0, (phaseBase - 9) / 8)) : 0;
+          const loopIsVisible = index < revealedLoopCount;
+          const isCurrentLoop =
+            playbackState && index === playbackState.activeLoopIndex;
+          const phase = isCurrentLoop ? playbackState.phase : "done";
+          const textTick = isCurrentLoop ? playbackState.textTick : 999;
+          const actionCount =
+            phase === "actions" || phase === "steps" || phase === "evaluation" || phase === "feedback" || phase === "done"
+              ? log.research.proposed_actions.length
+              : 0;
+          const feedbackRatio =
+            phase === "feedback" || phase === "done"
+              ? Math.min(1, Math.max(0, textTick / 8))
+              : phase === "done"
+                ? 1
+                : 0;
           const steps: RunningPlaybackStep[] = log.development.evolving_steps.map((step, stepIndex) => {
-            const stepPhase = Math.max(0, phaseBase - stepIndex * 5);
-            const codeRatio = Math.min(1, Math.max(0, stepPhase / 4));
-            const logRatio = Math.min(1, Math.max(0, (stepPhase - 2) / 4));
+            const stepIsVisible =
+              phase === "steps" || phase === "evaluation" || phase === "feedback" || phase === "done"
+                ? stepIndex < (isCurrentLoop ? playbackState.stepRevealIndex : log.development.evolving_steps.length)
+                : false;
+            const codeRatio = stepIsVisible
+              ? Math.min(1, Math.max(0, textTick / 6))
+              : 0;
+            const logRatio = stepIsVisible
+              ? Math.min(1, Math.max(0, (textTick - 2) / 6))
+              : 0;
             return {
               ...step,
               visibleCode: loopIsVisible ? sliceTextProgressively(step.code, codeRatio) : "",
               visibleExecutionLog: loopIsVisible
                 ? sliceTextProgressively(step.execution_log, logRatio)
                 : "",
-              revealed: loopIsVisible && stepPhase > 0
+              revealed: loopIsVisible && stepIsVisible
             };
           });
 
@@ -515,7 +581,7 @@ export function WorkspacePage() {
                 (log) =>
                   visibleExperimentLoops.find((loop) => loop.id === log.loop_id) !== undefined
               )}
-              playbackLoops={playbackLoops}
+              playbackLoops={visiblePlaybackLoops}
               workspaceMetrics={workspaceMetrics}
               onChangeView={(view) =>
                 setState((current) => ({ ...current, experimentView: view }))
