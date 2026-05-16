@@ -24,22 +24,18 @@ export function CompletedProjectResult({
   const models = project.completed?.models ?? [];
 
   return (
-    <section className="panel">
-      <div className="panel__header">
-        <div>
-          <div className="panel__eyebrow">已完成项目</div>
-          <h2 className="panel__title">模型结果与部署下载</h2>
+    <section className="panel completed-panel">
+      <div className="completed-banner">
+        <div className="completed-banner__copy">
+          <div className="completed-banner__eyebrow">Deployment Center</div>
+          <h2 className="completed-banner__title">{project.name}</h2>
+          <p className="completed-banner__text">
+            模型生成已完成。你可以查看指标数据，并直接下载模型压缩包。
+          </p>
         </div>
-        <p className="panel__desc">
-          模型生成已完成。你可以查看指标数据，并直接下载模型压缩包。
-        </p>
-      </div>
-
-      <div className="completed-hero">
-        <div>
-          <div className="completed-hero__label">当前项目</div>
-          <div className="completed-hero__title">{project.name}</div>
-          {project.summary ? <p className="completed-hero__text">{project.summary}</p> : null}
+        <div className="completed-banner__status">
+          <span className="completed-banner__status-label">当前状态</span>
+          <strong>Ready to Deploy</strong>
         </div>
       </div>
 
@@ -49,72 +45,84 @@ export function CompletedProjectResult({
             <Icon name="rocket" size={15} color="#1f6fff" />
             可部署模型
           </div>
-          {models.map((model) => (
-            <button
-              key={model.modelId}
-              className={`loop-item ${selectedModel.modelId === model.modelId ? "loop-item--active" : ""}`}
-              onClick={() => onSelectModel(model.modelId)}
-              type="button"
-            >
-              <div className="loop-item__main">
-                <span
-                  className={`loop-item__status ${
-                    model.status === "recommended"
-                      ? "loop-item__status--success"
-                      : "loop-item__status--failed"
-                  }`}
-                >
-                  {model.status === "recommended" ? (
-                    <Icon name="check" size={13} color="#196b4d" strokeWidth={2.6} />
-                  ) : (
-                    <Icon name="barChart3" size={13} color="#8f3c31" strokeWidth={2.6} />
-                  )}
-                </span>
-                <div>
-                  <div className="loop-item__name">{model.modelName}</div>
-                  <div className="loop-item__meta">{model.version}</div>
+          <div className="deploy-model-stack">
+            {models.map((model) => (
+              <button
+                key={model.modelId}
+                className={`deploy-model-card ${selectedModel.modelId === model.modelId ? "deploy-model-card--active" : ""}`}
+                onClick={() => onSelectModel(model.modelId)}
+                type="button"
+              >
+                <div className="deploy-model-card__header">
+                  <span className="deploy-model-card__status">
+                    <Icon name="check" size={14} color="#196b4d" strokeWidth={2.6} />
+                  </span>
+                  <span className="deploy-model-card__tag">可用模型</span>
                 </div>
-              </div>
-              <span className="loop-item__score">{formatMetric(model.primaryMetricValue)}</span>
-            </button>
-          ))}
+                <div className="deploy-model-card__title">{model.modelName}</div>
+                <div className="deploy-model-card__meta">{model.version}</div>
+                <div className="deploy-model-card__metric">
+                  <span>{model.primaryMetricName}</span>
+                  <strong>{formatMetric(model.primaryMetricValue)}</strong>
+                </div>
+              </button>
+            ))}
+          </div>
         </aside>
 
         <div className="workspace-panel completed-model-panel">
-          <div className="result-summary">
-            <div>
-              <div className="result-summary__label">当前选中模型</div>
-              <div className="result-summary__title">
-                {selectedModel.modelName} · {selectedModel.primaryMetricName}{" "}
-                {formatMetric(selectedModel.primaryMetricValue)}
+          <section className="deploy-result-card">
+            <div className="deploy-result-card__header">
+              <div>
+                <div className="deploy-result-card__eyebrow">当前选中模型</div>
+                <div className="deploy-result-card__title">
+                  {selectedModel.modelName} · {selectedModel.primaryMetricName}{" "}
+                  {formatMetric(selectedModel.primaryMetricValue)}
+                </div>
               </div>
+              <div className="deploy-result-card__state">模型已就绪</div>
             </div>
-            <a
-              className="btn btn--primary"
-              href={selectedModel.package.downloadUrl}
-              download={selectedModel.package.packageName}
-            >
-              <Icon name="download" size={14} color="#fff8ee" />
-              下载模型压缩包
-            </a>
-          </div>
 
-          <div className="experiment-hero">
-            <div>
-              <div className="experiment-hero__label">模型说明</div>
-              <div className="experiment-hero__title">风控模型</div>
+            <div className="deploy-result-card__actions">
+              <div className="deploy-result-card__note">
+                当前模型包已整理完成，可直接下载并进入部署流程。
+              </div>
+              <a
+                className="btn btn--primary"
+                href={selectedModel.package.downloadUrl}
+                download={selectedModel.package.packageName}
+              >
+                <Icon name="download" size={14} color="#fff8ee" />
+                下载模型压缩包
+              </a>
             </div>
-            <div className="experiment-hero__metrics">
-              <article className="hero-metric">
-                <span>{selectedModel.primaryMetricName}</span>
-                <strong>{formatMetric(selectedModel.primaryMetricValue)}</strong>
-              </article>
-              <article className="hero-metric">
-                <span>模型包</span>
-                <strong>{selectedModel.package.sizeLabel ?? selectedModel.package.packageName}</strong>
-              </article>
+          </section>
+
+          <section className="deploy-kpi-strip">
+            <article className="deploy-kpi-card">
+              <span className="deploy-kpi-card__label">{selectedModel.primaryMetricName}</span>
+              <strong className="deploy-kpi-card__value">
+                {formatMetric(selectedModel.primaryMetricValue)}
+              </strong>
+              <span className="deploy-kpi-card__meta">当前最佳排序能力</span>
+            </article>
+
+            <article className="deploy-kpi-card">
+              <span className="deploy-kpi-card__label">模型包</span>
+              <strong className="deploy-kpi-card__value">
+                {selectedModel.package.sizeLabel ?? selectedModel.package.packageName}
+              </strong>
+              <span className="deploy-kpi-card__meta">下载后即可部署启动</span>
+            </article>
+          </section>
+
+          <section className="deploy-profile-card">
+            <div className="deploy-profile-card__eyebrow">模型说明</div>
+            <div className="deploy-profile-card__title">风控模型</div>
+            <div className="deploy-profile-card__subtitle">
+              面向交付与部署场景整理的当前最佳模型结果。
             </div>
-          </div>
+          </section>
 
           <section className="deploy-guide">
             <div className="deploy-guide__header">
