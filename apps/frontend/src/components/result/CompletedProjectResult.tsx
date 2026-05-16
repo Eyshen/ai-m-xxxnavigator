@@ -13,7 +13,6 @@ function formatMetric(value?: number) {
 
 const deployLinks = [
   { label: "使用说明页", url: "http://服务器IP:8090/usage" },
-  { label: "在线文档", url: "http://服务器IP:8090/docs" },
   { label: "预测接口", url: "http://服务器IP:8090/predict" }
 ];
 
