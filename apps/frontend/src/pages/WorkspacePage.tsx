@@ -400,22 +400,50 @@ export function WorkspacePage() {
     currentPlaybackLoopId !== null &&
     focusedLoopId === currentPlaybackLoopId;
   const canShowFocusedDetails = currentLoopCompleted || !viewingCurrentRunningLoop;
+  const runningOverviewMetrics = getRunningOverviewMetrics(project);
+  const playbackMetricSource =
+    runningOverviewMetrics.length > 0
+      ? runningOverviewMetrics
+      : [
+          { label: "识别字段", value: String(workspaceMetrics.columnsDetected), meta: "自动字段识别" },
+          { label: "扫描样本", value: workspaceMetrics.rowsScanned.toLocaleString(), meta: "训练数据规模" },
+          { label: "成功 LOOP", value: "--", meta: "收益成立方案" },
+          { label: `最佳 ${state.optimizationMetric}`, value: "--", meta: "当前最优模型" },
+          { label: "运行时长", value: workspaceMetrics.latestRuntime, meta: "自动实验耗时" },
+          { label: "结果项", value: "0", meta: "可追溯实验记录" }
+        ];
   const playbackMetrics: RunningPlaybackMetricItem[] =
     project.status === "running"
-      ? (getRunningOverviewMetrics(project) ?? []).map((item, index) => ({
-          ...item,
-          value:
-            index === 2
-              ? String(playbackLoops.filter((loop) => loop.status === "success").length)
-              : index === 3
-                ? bestCompletedLoop?.auc.toFixed(4) ?? "--"
-                : index === 4
-                  ? String(
-                      visibleExperimentLoops.flatMap((loop) => loop.components).length
-                    )
-                  : item.value,
-          revealed: revealedLoopCount >= Math.min(index + 1, 2)
-        }))
+      ? playbackMetricSource.map((item, index) => {
+          const isSuccessMetric = item.label.includes("成功");
+          const isBestMetric = item.label.includes("最佳");
+          const isRuntimeMetric = item.label.includes("运行时长");
+          const isResultMetric = item.label.includes("结果项");
+
+          return {
+            ...item,
+            value:
+              isSuccessMetric
+                ? String(playbackLoops.filter((loop) => loop.status === "success").length)
+                : isBestMetric
+                  ? bestCompletedLoop?.auc.toFixed(4) ?? "--"
+                  : isRuntimeMetric
+                    ? workspaceMetrics.latestRuntime
+                    : isResultMetric
+                      ? String(
+                          visibleExperimentLoops.flatMap((loop) => loop.components).length
+                        )
+                      : item.value,
+            revealed:
+              isSuccessMetric || isBestMetric || isRuntimeMetric
+                ? completedLoopCount > 0
+                : isResultMetric
+                  ? revealedLoopCount >= 1
+                  : index === 0
+                    ? revealedLoopCount >= 1
+                    : true
+          };
+        })
       : [];
   const playbackLogs: RunningPlaybackLog[] =
     project.status === "running"

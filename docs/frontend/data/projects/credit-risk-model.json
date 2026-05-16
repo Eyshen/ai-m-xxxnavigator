@@ -21,7 +21,7 @@
         "version": "v1.0.0",
         "status": "recommended",
         "primaryMetricName": "AUC",
-        "primaryMetricValue": 0.8542,
+        "primaryMetricValue": 0.9012,
         "ks": 0.6234,
         "trainedAt": "2026-05-13 16:40",
         "summary": "当前最佳方案，适合直接进入部署评审。",
