@@ -1,0 +1,29 @@
+# 竞赛场景描述
+====== 场景背景 (Background of the scenario) ======
+本次竞赛的任务类型是 **二分类 (Classification)**。
+本次竞赛使用的数据类型是 **表格型 (Tabular)**。
+
+# 比赛要求
+{{ competition_desc_compiled }}
+
+# 数据文件夹结构 (所有文件都在 ./workspace_input 目录下)
+## 文件树:
+```text
+{{ file_tree_structure }}
+```
+
+文件详情:
+{{ csv_file_desc }}
+
+# 需要检验的假设
+{{ hypothesis }}
+
+# 验证与工程要求
+1. 循环结束后，计算并清晰打印 OOF 的平均得分 (Mean) 和标准差 (Std)。
+2. 确保代码包含 seed_everything(42) 函数。
+3. 确保print输出目标函数的值。
+4. 模型在训练和验证时仅允许使用 train 文件，严禁读取 test 文件。
+5. 不要对 test 数据进行推理，也不要生成或保存任何推理结果的 CSV 文件。
+6. 在将数据输入 LightGBM 之前，请务必先检查并处理类别特征（Categorical Features）：请将所有字符串/object 类型的列转换为 pandas 的 category 数据类型，或者使用 LabelEncoder 进行编码，以避免 dtypes 报错。
+
+请严格遵守你的系统限制，**只输出 ```python ... ``` 代码块，不包含任何解释性文本**。

@@ -1,0 +1,5 @@
+[
+  { "id": 0, "name": "数据接入", "desc": "上传数据并识别字段", "icon": "upload" },
+  { "id": 1, "name": "自动实验", "desc": "多轮假设验证", "icon": "zap" },
+  { "id": 2, "name": "模型交付", "desc": "导出结果和交付物", "icon": "rocket" }
+]

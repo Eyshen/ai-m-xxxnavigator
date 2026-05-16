@@ -1,0 +1,14 @@
+# 比赛介绍
+{{ competition_desc }}
+
+# 数据文件夹结构 (所有文件都在 ./workspace_input 目录下)
+## 文件树:
+```text
+{{ file_tree_structure }}
+```
+
+文件详情:
+{{ csv_file_desc }}
+
+# 要求
+请分析并提取相关信息。

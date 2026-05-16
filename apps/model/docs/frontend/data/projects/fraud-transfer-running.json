@@ -1,0 +1,25 @@
+{
+  "projectId": "fraud-transfer-running",
+  "name": "欺诈转账识别实验",
+  "status": "running",
+  "entryView": "running",
+  "time": "刚刚",
+  "summary": "项目进行中，当前正在进行高风险交互特征验证与模型收益评估。",
+  "dataset": {
+    "name": "fraud-transfer-demo.csv",
+    "rows": 300000,
+    "columns": 61,
+    "target": "is_fraud_transfer"
+  },
+  "running": {
+    "currentStep": 1,
+    "activeLoopId": 2,
+    "overviewMetrics": [
+      { "label": "识别字段", "value": "61", "meta": "自动字段识别" },
+      { "label": "扫描样本", "value": "300,000", "meta": "交易样本规模" },
+      { "label": "成功 LOOP", "value": "2", "meta": "收益成立方案" },
+      { "label": "最佳 AUC", "value": "0.912", "meta": "当前最优模型" },
+      { "label": "结果项", "value": "6", "meta": "可追溯实验记录" }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "productHighlights": [
+    "自动字段识别",
+    "AI 特征推荐",
+    "多模型训练",
+    "闭环验证评估",
+    "一键交付部署"
+  ],
+  "quickRequirementTemplates": [
+    "建立信用风险评分模型，识别未来 30 天高风险客户，并输出可解释的关键影响因素。",
+    "对新增客户做违约倾向预测，优先优化 AUC，并给出特征业务解释和验证集结果。",
+    "面向风控策略评审，生成多轮实验报告，重点展示稳定特征、最佳模型组合和交付文件。"
+  ],
+  "deliveryChecklist": [
+    "训练数据、验证比例和实验配置已固化，可复现实验过程。",
+    "最佳模型、特征解释和实验摘要已整理为交付清单。",
+    "部署演示页可继续接真实下载链接、推理接口和 PDF 报告。"
+  ],
+  "workspaceMetrics": {
+    "columnsDetected": 48,
+    "rowsScanned": 12000,
+    "latestRuntime": "08m 42s"
+  },
+  "deliveryOptions": [
+    { "title": "导出 PMML", "desc": "标准化模型格式", "icon": "fileText" },
+    { "title": "Python 推理代码", "desc": "便于服务化接入", "icon": "fileText" },
+    { "title": "实验报告 PDF", "desc": "适合汇报和评审", "icon": "download" }
+  ]
+}
