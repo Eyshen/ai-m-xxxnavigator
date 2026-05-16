@@ -119,10 +119,10 @@ export function Sidebar({
                   {chat.time}
                   <span className={`project-item__status project-item__status--${chat.status}`}>
                     {chat.status === "completed"
-                      ? "Completed"
+                      ? "已完成"
                       : chat.status === "running"
-                        ? "Running"
-                        : "Created"}
+                        ? "进行中"
+                        : "待开始"}
                   </span>
                 </div>
               </div>

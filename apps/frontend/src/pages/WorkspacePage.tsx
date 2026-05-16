@@ -159,6 +159,7 @@ export function WorkspacePage() {
     stepRevealIndex: number;
     textTick: number;
     playbackComplete: boolean;
+    paused: boolean;
     manualSelectedLoopId: number | null;
   } | null>(null);
   const project =
@@ -205,12 +206,18 @@ export function WorkspacePage() {
       stepRevealIndex: 0,
       textTick: 0,
       playbackComplete: false,
+      paused: false,
       manualSelectedLoopId: null
     });
   }, [project.status, state.projectId, state.experimentLoops]);
 
   useEffect(() => {
-    if (project.status !== "running" || !playbackState || playbackState.playbackComplete) {
+    if (
+      project.status !== "running" ||
+      !playbackState ||
+      playbackState.playbackComplete ||
+      playbackState.paused
+    ) {
       return;
     }
 
@@ -235,6 +242,7 @@ export function WorkspacePage() {
             return {
               ...current,
               playbackComplete: true,
+              paused: false,
               manualSelectedLoopId: current.manualSelectedLoopId
             };
           }
@@ -246,6 +254,7 @@ export function WorkspacePage() {
             stepRevealIndex: 0,
             textTick: 0,
             playbackComplete: false,
+            paused: false,
             manualSelectedLoopId: current.manualSelectedLoopId
           };
         }
@@ -257,6 +266,7 @@ export function WorkspacePage() {
             phase: "completed_hold",
             textTick: current.textTick + 1,
             playbackComplete: false,
+            paused: false,
             manualSelectedLoopId:
               state.experimentLoops[current.activeLoopIndex]?.id ??
               current.manualSelectedLoopId
@@ -375,16 +385,24 @@ export function WorkspacePage() {
       ? playbackLoops.filter((loop, index) => index < revealedLoopCount)
       : playbackLoops;
   const bestCompletedLoop = getBestLoop(completedExperimentLoops);
+  const playbackComplete =
+    project.status !== "running" || !playbackState || playbackState.playbackComplete;
+  const playbackPaused = project.status === "running" && Boolean(playbackState?.paused);
+  const currentPlaybackLoopId = currentPlaybackLoop?.id ?? null;
+  const defaultFocusedLoopId =
+    visibleExperimentLoops[playbackState?.focusedLoopIndex ?? 0]?.id ??
+    visibleExperimentLoops[visibleExperimentLoops.length - 1]?.id ??
+    state.activeLoopId;
   const focusedLoopId =
     project.status === "running" && playbackState
-      ? playbackState.playbackComplete && playbackState.manualSelectedLoopId
-        ? playbackState.manualSelectedLoopId
-        : visibleExperimentLoops[playbackState.focusedLoopIndex]?.id ??
-        visibleExperimentLoops[visibleExperimentLoops.length - 1]?.id ??
-        state.activeLoopId
+      ? playbackState.manualSelectedLoopId ?? defaultFocusedLoopId
       : state.activeLoopId;
-  const canShowFocusedDetails = currentLoopCompleted;
-  const playbackComplete = project.status !== "running" || !playbackState || playbackState.playbackComplete;
+  const viewingCurrentRunningLoop =
+    project.status === "running" &&
+    !playbackComplete &&
+    currentPlaybackLoopId !== null &&
+    focusedLoopId === currentPlaybackLoopId;
+  const canShowFocusedDetails = currentLoopCompleted || !viewingCurrentRunningLoop;
   const playbackMetrics: RunningPlaybackMetricItem[] =
     project.status === "running"
       ? (getRunningOverviewMetrics(project) ?? []).map((item, index) => ({
@@ -559,40 +577,101 @@ export function WorkspacePage() {
                   ...current,
                   experimentRoundsInput: value,
                   experimentRounds:
-                    normalizeInputWithReset(value, 1, 8, 1, true) ?? current.experimentRounds
+                    normalizeInputWithReset(value, 1, 8, current.experimentRounds, true) ??
+                    current.experimentRounds
+                }))
+              }
+              onRoundsBlur={() =>
+                setState((current) => ({
+                  ...current,
+                  experimentRoundsInput: String(
+                    normalizeInputWithReset(
+                      current.experimentRoundsInput,
+                      1,
+                      8,
+                      current.experimentRounds,
+                      true
+                    ) ?? current.experimentRounds
+                  ),
+                  experimentRounds:
+                    normalizeInputWithReset(
+                      current.experimentRoundsInput,
+                      1,
+                      8,
+                      current.experimentRounds,
+                      true
+                    ) ?? current.experimentRounds
                 }))
               }
               onValidationRatioChange={(value) =>
                 setState((current) => {
-                  const normalized = normalizeInputWithReset(value, 0, 100, 0);
-                  const shouldReset =
-                    value.trim().length > 0 &&
-                    normalized === 0 &&
-                    (Number(value) < 0 || Number(value) > 100 || !Number.isFinite(Number(value)));
-
                   return {
                     ...current,
-                    validationRatioInput: shouldReset ? "0" : value,
+                    validationRatioInput: value,
                     validationRatio:
-                      normalized ?? current.validationRatio
+                      normalizeInputWithReset(
+                        value,
+                        0,
+                        100,
+                        current.validationRatio
+                      ) ?? current.validationRatio
                   };
                 })
               }
+              onValidationRatioBlur={() =>
+                setState((current) => ({
+                  ...current,
+                  validationRatioInput: String(
+                    normalizeInputWithReset(
+                      current.validationRatioInput,
+                      0,
+                      100,
+                      current.validationRatio
+                    ) ?? current.validationRatio
+                  ),
+                  validationRatio:
+                    normalizeInputWithReset(
+                      current.validationRatioInput,
+                      0,
+                      100,
+                      current.validationRatio
+                    ) ?? current.validationRatio
+                }))
+              }
               onOptimizationTargetChange={(value) =>
                 setState((current) => {
-                  const normalized = normalizeInputWithReset(value, 0, 1, 0);
-                  const shouldReset =
-                    value.trim().length > 0 &&
-                    normalized === 0 &&
-                    (Number(value) < 0 || Number(value) > 1 || !Number.isFinite(Number(value)));
-
                   return {
                     ...current,
-                    optimizationTargetInput: shouldReset ? "0" : value,
+                    optimizationTargetInput: value,
                     optimizationTarget:
-                      normalized ?? current.optimizationTarget
+                      normalizeInputWithReset(
+                        value,
+                        0,
+                        1,
+                        current.optimizationTarget
+                      ) ?? current.optimizationTarget
                   };
                 })
+              }
+              onOptimizationTargetBlur={() =>
+                setState((current) => ({
+                  ...current,
+                  optimizationTargetInput: String(
+                    normalizeInputWithReset(
+                      current.optimizationTargetInput,
+                      0,
+                      1,
+                      current.optimizationTarget
+                    ) ?? current.optimizationTarget
+                  ),
+                  optimizationTarget:
+                    normalizeInputWithReset(
+                      current.optimizationTargetInput,
+                      0,
+                      1,
+                      current.optimizationTarget
+                    ) ?? current.optimizationTarget
+                }))
               }
               onFileUpload={(fileName) =>
                 setState((current) => ({
@@ -668,9 +747,12 @@ export function WorkspacePage() {
               )}
               playbackLoops={visiblePlaybackLoops}
               playbackComplete={playbackComplete}
+              playbackPaused={playbackPaused}
               canShowFocusedDetails={canShowFocusedDetails}
-              currentModelLoop={!playbackComplete ? currentPlaybackLoop ?? undefined : undefined}
-              currentModelComplete={currentLoopCompleted}
+              currentModelLoop={
+                !playbackComplete && viewingCurrentRunningLoop ? currentPlaybackLoop ?? undefined : undefined
+              }
+              currentModelComplete={viewingCurrentRunningLoop ? currentLoopCompleted : true}
               bestLoop={bestCompletedLoop}
               completedLoopCount={completedLoopCount}
               workspaceMetrics={workspaceMetrics}
@@ -684,8 +766,32 @@ export function WorkspacePage() {
                   expandedExperimentId: null
                 }))
               }
+              onTogglePlayback={() =>
+                setPlaybackState((current) => {
+                  if (!current) return current;
+                  const nextPaused = !current.paused;
+                  if (!nextPaused) {
+                    const activeLoopId = state.experimentLoops[current.activeLoopIndex]?.id ?? state.activeLoopId;
+                    setState((existing) => ({
+                      ...existing,
+                      activeLoopId,
+                      experimentView: "process",
+                      expandedExperimentId: null
+                    }));
+                    return {
+                      ...current,
+                      paused: false,
+                      manualSelectedLoopId: null
+                    };
+                  }
+
+                  return {
+                    ...current,
+                    paused: true
+                  };
+                })
+              }
               onSelectLoop={(loopId) => {
-                if (!playbackComplete) return;
                 setState((current) => ({
                   ...current,
                   activeLoopId: loopId,
@@ -696,7 +802,31 @@ export function WorkspacePage() {
                   current
                     ? {
                         ...current,
+                        paused:
+                          current.playbackComplete ||
+                          state.experimentLoops[current.activeLoopIndex]?.id !== loopId
+                            ? true
+                            : current.paused,
                         manualSelectedLoopId: loopId
+                      }
+                    : current
+                );
+              }}
+              onJumpToCurrentLoop={() => {
+                const activeLoopId =
+                  state.experimentLoops[playbackState?.activeLoopIndex ?? 0]?.id ?? state.activeLoopId;
+                setState((existing) => ({
+                  ...existing,
+                  activeLoopId,
+                  experimentView: "process",
+                  expandedExperimentId: null
+                }));
+                setPlaybackState((current) =>
+                  current
+                    ? {
+                        ...current,
+                        paused: false,
+                        manualSelectedLoopId: null
                       }
                     : current
                 );
@@ -783,6 +913,7 @@ export function WorkspacePage() {
               loopLogs={completedExperimentLogs}
               reviewMode
               playbackComplete
+              playbackPaused={false}
               canShowFocusedDetails
               bestLoop={bestLoop}
               completedLoopCount={state.experimentLoops.length}
@@ -797,6 +928,7 @@ export function WorkspacePage() {
                   expandedExperimentId: null
                 }))
               }
+              onTogglePlayback={() => {}}
               onSelectLoop={(loopId) =>
                 setState((current) => ({
                   ...current,
@@ -812,6 +944,7 @@ export function WorkspacePage() {
                     current.expandedExperimentId === experimentId ? null : experimentId
                 }))
               }
+              onJumpToCurrentLoop={() => {}}
               onAddLoop={() => {}}
               onGoDeploy={() => {}}
               onDownload={() => {}}

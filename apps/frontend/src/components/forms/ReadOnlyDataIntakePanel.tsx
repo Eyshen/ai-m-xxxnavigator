@@ -130,14 +130,17 @@ export function ReadOnlyDataIntakePanel({
           <span className="upload-card__chip">{datasetSummary.rows.toLocaleString()} 条样本</span>
           <span className="upload-card__chip">目标字段 {datasetSummary.target}</span>
         </div>
-        <div className="dropzone dropzone--readonly">
+        <div className="file-summary-card">
           <div className="dropzone__icon">
             <Icon name="upload" size={30} color="#8fd4ff" />
           </div>
-          <div className="dropzone__title">{datasetSummary.source}</div>
-          <div className="dropzone__subtitle">
-            文件已在实验启动前完成解析，当前页面仅支持回看上传结果与数据摘要。
+          <div className="file-summary-card__body">
+            <div className="dropzone__title">{datasetSummary.source}</div>
+            <div className="dropzone__subtitle">
+              文件已在实验启动前完成解析，当前页面仅支持回看上传结果与数据摘要。
+            </div>
           </div>
+          <div className="file-summary-card__meta">只读快照</div>
         </div>
       </article>
     </section>

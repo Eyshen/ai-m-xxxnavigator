@@ -39,7 +39,7 @@ export function DeliveryPanel({
 
       <div className="delivery-hero">
         <article className="delivery-summary-card">
-          <div className="delivery-summary-card__eyebrow">Best Model Output</div>
+          <div className="delivery-summary-card__eyebrow">最佳模型输出</div>
           <h3 className="delivery-summary-card__title">{experimentRun.result.summary}</h3>
           <p className="delivery-summary-card__text">
             当前演示基于 {experimentRun.dataset.name}，本次共执行 {executedLoops} 轮自动实验，

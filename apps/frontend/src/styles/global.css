@@ -521,8 +521,8 @@ svg {
 .stage-card__headline strong {
   display: block;
   color: var(--text-strong);
-  font-size: 2rem;
-  line-height: 1;
+  font-size: 1.7rem;
+  line-height: 1.15;
 }
 
 .stage-card__headline span {
@@ -631,8 +631,9 @@ svg {
 
 .stage-node__percent {
   color: var(--brand-deep);
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   font-weight: 700;
+  text-align: right;
 }
 
 .stage-node__index {
@@ -727,6 +728,49 @@ svg {
   margin-bottom: 18px;
 }
 
+.intake-priority {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.intake-priority__item {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(120, 228, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(10, 20, 38, 0.84);
+  box-shadow: var(--shadow-md);
+}
+
+.intake-priority__item--done {
+  border-color: rgba(93, 247, 192, 0.18);
+  background: linear-gradient(180deg, rgba(8, 30, 27, 0.92), rgba(8, 20, 33, 0.88));
+}
+
+.intake-priority__step {
+  color: var(--brand-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.intake-priority__title {
+  color: var(--text-strong);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.intake-priority__meta {
+  color: var(--muted-strong);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
 .phase-glance__card,
 .input-card,
 .loop-rail,
@@ -779,8 +823,16 @@ svg {
   gap: 16px;
 }
 
+.intake-grid--primary {
+  align-items: stretch;
+}
+
 .input-card {
   padding: 22px;
+}
+
+.input-card--config {
+  margin-top: 18px;
 }
 
 .input-card--dialogue {
@@ -1011,6 +1063,10 @@ svg {
   box-shadow: var(--shadow-md);
 }
 
+.upload-card--primary {
+  margin-top: 0;
+}
+
 .upload-card__chips {
   display: flex;
   flex-wrap: wrap;
@@ -1075,6 +1131,36 @@ svg {
   transform: none;
   border-color: rgba(120, 228, 255, 0.22);
   background: linear-gradient(135deg, rgba(8, 18, 34, 0.88), rgba(12, 26, 48, 0.92));
+}
+
+.file-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(120, 228, 255, 0.1);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(8, 18, 34, 0.88), rgba(12, 26, 48, 0.92));
+}
+
+.file-summary-card__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.file-summary-card__meta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 228, 255, 0.1);
+  background: rgba(8, 18, 34, 0.88);
+  color: var(--muted-strong);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .dropzone__icon {
@@ -1296,6 +1382,7 @@ svg {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .toggle-group {
@@ -1392,6 +1479,10 @@ svg {
 .loop-item--running {
   border-color: rgba(30, 200, 255, 0.26);
   box-shadow: 0 0 0 1px rgba(30, 200, 255, 0.1);
+}
+
+.loop-item:disabled {
+  cursor: not-allowed;
 }
 
 .loop-item__main {
@@ -1588,6 +1679,7 @@ svg {
 
 .status-pill {
   display: inline-flex;
+  align-items: center;
   justify-content: center;
   min-width: 74px;
   min-height: 32px;
@@ -1595,6 +1687,8 @@ svg {
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .status-pill--success {
@@ -1670,6 +1764,9 @@ svg {
   color: var(--muted-strong);
   font-size: 0.82rem;
   line-height: 1.7;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .expand-button {
@@ -2121,6 +2218,7 @@ svg {
   }
 
   .stage-card__summary,
+  .intake-priority,
   .intake-grid,
   .experiment-layout,
   .completed-layout,
@@ -2134,6 +2232,7 @@ svg {
 
   .stage-card__meta,
   .experiment-hero__metrics,
+  .intake-priority,
   .phase-glance,
   .metric-strip,
   .completed-metrics-grid,
@@ -2180,6 +2279,7 @@ svg {
   }
 
   .phase-glance,
+  .intake-priority,
   .metric-strip,
   .stage-card__grid,
   .stage-card__meta,
@@ -2219,6 +2319,7 @@ svg {
   }
 
   .phase-glance,
+  .intake-priority,
   .metric-strip,
   .stage-card__grid,
   .stage-card__meta,
@@ -2254,6 +2355,11 @@ svg {
 
   .upload-card__chips {
     gap: 8px;
+  }
+
+  .file-summary-card {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

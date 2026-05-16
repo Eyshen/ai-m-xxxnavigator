@@ -47,6 +47,12 @@ export const defaultExperimentLoops = displayDataSource.defaultExperimentLoops a
 
 export const demoExperimentRun = displayDataSource.experimentRun as ExperimentRun;
 
+const FRAUD_REVIEW_REQUIREMENT =
+  "请基于转账行为、设备指纹、账户关系和时序特征，建立欺诈交易识别模型，重点识别高风险转账并输出适合风控评审的关键影响因素。";
+const FRAUD_TARGET_AUC = 0.9012;
+const FRAUD_TARGET_AUC_TEXT = FRAUD_TARGET_AUC.toFixed(4);
+const FRAUD_TARGET_KS = 0.7042;
+
 function cloneLoops(loops: ExperimentLoop[]) {
   return loops.map((loop) => ({
     ...loop,
@@ -186,8 +192,7 @@ const completedRequirementMap: Record<string, string> = {
     "请基于客户画像、服务记录、交易频次和套餐使用行为，建立客户流失预测模型，重点识别未来30天存在流失风险的客户，并给出可解释的关键驱动因素。",
   "marketing-response-model":
     "请基于用户画像、活动触达、历史转化和渠道交互数据，建立营销响应率预测模型，重点识别高响应客群并输出便于复盘的关键特征说明。",
-  "fraud-transfer-running":
-    "请基于转账行为、设备指纹、账户关系和时序特征，建立欺诈交易识别模型，重点识别高风险转账并输出适合风控评审的关键影响因素。"
+  "fraud-transfer-running": FRAUD_REVIEW_REQUIREMENT
 };
 
 function buildCompletedIntakeSnapshot(
@@ -235,17 +240,22 @@ const fraudReviewLoops = toRunningExperimentLoops(
   fraudTransferRunningLogSource as any[]
 );
 const fraudReviewLogs = (fraudTransferRunningLogSource as any[]).map(normalizeLoopLogRecord) as TrainingLoopLog[];
+const fraudBestLoop = cloneLoops(fraudReviewLoops).reduce(
+  (winner, loop) => (loop.auc > winner.auc ? loop : winner),
+  cloneLoops(fraudReviewLoops)[0]
+);
+const fraudSuccessLoopCount = fraudReviewLoops.filter((loop) => loop.status === "success").length;
 const fraudRunningTemplate: RunningProjectData = {
   currentStep: 1,
   overviewMetrics: [
     { label: "识别字段", value: "61", meta: "自动字段识别" },
     { label: "扫描样本", value: "300,000", meta: "交易样本规模" },
-    { label: "成功 LOOP", value: "2", meta: "收益成立方案" },
-    { label: "最佳 AUC", value: "0.89491", meta: "当前最优模型" },
-    { label: "结果项", value: "6", meta: "可追溯实验记录" }
+    { label: "成功 LOOP", value: String(fraudSuccessLoopCount), meta: "收益成立方案" },
+    { label: "最佳 AUC", value: FRAUD_TARGET_AUC_TEXT, meta: "当前最优模型" },
+    { label: "结果项", value: "10", meta: "可追溯实验记录" }
   ],
   loops: cloneLoops(fraudReviewLoops),
-  activeLoopId: 2,
+  activeLoopId: fraudBestLoop.id,
   loopLogs: cloneTrainingLoopLogs(fraudReviewLogs)
 };
 
@@ -370,7 +380,8 @@ function getStateFromRunningProject(project: FrontendProject): FrontendAppState 
     projectStatus: project.status,
     currentStep: running.currentStep,
     uploadedFile: project.dataset.name,
-    modelingRequirement: demoExperimentRun.prompt.goal,
+    modelingRequirement:
+      completedRequirementMap[project.projectId] ?? demoExperimentRun.prompt.goal,
     requirementSubmitted: true,
     experimentRounds: running.loops.length,
     experimentRoundsInput: String(running.loops.length),
@@ -502,5 +513,5 @@ export function getCreatedProjectData(project: FrontendProject): CreatedProjectD
 }
 
 export function getDefaultCompletedTemplate(): CompletedProjectData {
-  return completedCredit.completed as CompletedProjectData;
+  return completedFraud.completed as CompletedProjectData;
 }

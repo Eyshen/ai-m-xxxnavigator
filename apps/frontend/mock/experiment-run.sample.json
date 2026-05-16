@@ -1,16 +1,16 @@
 {
   "runId": "run_20260512_001",
-  "projectId": "credit-risk-demo",
+  "projectId": "fraud-transfer-running",
   "status": "completed",
   "dataset": {
-    "name": "credit-risk-demo.csv",
-    "rows": 12000,
-    "columns": 48
+    "name": "fraud-transfer-demo.csv",
+    "rows": 300000,
+    "columns": 61
   },
   "prompt": {
-    "goal": "建立信用卡逾期风险预测模型，识别未来 30 天高风险客户。",
+    "goal": "请基于转账行为、设备指纹、账户关系和时序特征，建立欺诈交易识别模型，重点识别高风险转账并输出适合风控评审的关键影响因素。",
     "systemPrompt": "自动执行多轮实验并输出最佳结果。",
-    "userPrompt": "重点展示关键影响因素和实验过程。"
+    "userPrompt": "重点展示每轮假设、验证证据、最佳模型指标和可直接交付的模型结果。"
   },
   "config": {
     "maxLoops": 5,
@@ -27,28 +27,28 @@
     },
     {
       "stepId": "step_02",
-      "name": "基线建模",
+      "name": "基线建模与时序验证",
       "type": "baseline_model",
       "status": "success",
-      "summary": "使用 XGBoost 生成基线模型，验证集 AUC 为 0.8124。"
+      "summary": "使用 LightGBM 建立时序基线，首轮 Mean OOF AUC 达到 0.8949。"
     },
     {
       "stepId": "step_03",
-      "name": "特征优化",
+      "name": "强正则化调优",
       "type": "feature_iteration",
       "status": "success",
-      "summary": "加入稳定业务衍生特征，验证集 AUC 提升到 0.8316。"
+      "summary": "完成 TE/FE 特征与强正则化组合调优，最佳 AUC 提升到 0.9012。"
     }
   ],
   "result": {
-    "bestLoop": "loop_05",
+    "bestLoop": "05 Loop",
     "bestMetric": {
       "name": "AUC",
-      "value": 0.8316
+      "value": 0.9012
     },
     "artifacts": [
       {
-        "name": "best-model.pkl",
+        "name": "fraud-xgboost-v3.zip",
         "type": "model"
       },
       {
@@ -56,6 +56,6 @@
         "type": "chart"
       }
     ],
-    "summary": "当前最佳方案为 XGBoost + 稳定业务衍生特征 + 阈值校准。"
+    "summary": "当前最佳方案为强正则化模型调优 + 时间鲁棒特征组合，最佳 AUC 为 0.9012。"
   }
 }

@@ -22,7 +22,7 @@ export function CompletedProjectResult({
     <section className="panel">
       <div className="panel__header">
         <div>
-          <div className="panel__eyebrow">Completed Project</div>
+          <div className="panel__eyebrow">已完成项目</div>
           <h2 className="panel__title">模型结果与部署下载</h2>
         </div>
         <p className="panel__desc">

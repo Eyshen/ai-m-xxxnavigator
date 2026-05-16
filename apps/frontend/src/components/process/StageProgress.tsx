@@ -30,13 +30,16 @@ export function StageProgress({
 }: StageProgressProps) {
   const hasUploadedFile = Boolean(uploadedFile);
   const displayStageId = selectedStageId ?? currentStep;
+  const completedProject = forceCompletedProgress;
   const progress =
-    forceCompletedProgress
+    completedProject
       ? 100
       : currentStep === 0 && !hasUploadedFile
       ? 0
       : ((currentStep + 1) / stages.length) * 100;
   const currentStage = stages[displayStageId];
+  const headlineValue = completedProject ? "已完成" : `阶段 0${currentStep + 1}`;
+  const headlineLabel = completedProject ? "项目状态" : "当前进度";
   const summaryItems =
     displayStageId === 0
       ? [
@@ -55,15 +58,15 @@ export function StageProgress({
     <section className="stage-card">
       <div className="stage-card__summary">
         <div>
-          <div className="stage-card__eyebrow">Workflow Progress</div>
+          <div className="stage-card__eyebrow">流程总览</div>
           <div className="stage-card__title">轻量可部署的三阶段建模流程</div>
           <div className="stage-card__summary-text">
-            {interactive ? "当前查看" : "当前阶段"}: {currentStage.name} · {currentStage.desc}
+            {completedProject ? "当前查看" : "当前推进至"}: {currentStage.name} · {currentStage.desc}
           </div>
         </div>
         <div className="stage-card__headline">
-          <strong>{Math.round(progress)}%</strong>
-          <span>当前完成度</span>
+          <strong>{headlineValue}</strong>
+          <span>{headlineLabel}</span>
         </div>
         <div className="stage-card__meta">
           {summaryItems.map((item) => (
@@ -77,18 +80,20 @@ export function StageProgress({
       <div className="stage-card__grid">
         {stages.map((stage, index) => {
           const isActive = displayStageId === stage.id;
-          const isDone = forceCompletedProgress ? !isActive : currentStep > stage.id;
-          const isDisabled = forceCompletedProgress ? false : currentStep < stage.id;
-          const stagePercent =
-            forceCompletedProgress
-              ? 100
+          const isDone = completedProject ? !isActive : currentStep > stage.id;
+          const isDisabled = completedProject ? false : currentStep < stage.id;
+          const stageIndicator =
+            completedProject
+              ? isActive
+                ? "查看中"
+                : "已完成"
               : currentStep === 0 && !hasUploadedFile && stage.id === 0
-              ? 0
+              ? "0%"
               : currentStep > stage.id
-                ? 100
+                ? "100%"
                 : currentStep === stage.id
-                  ? Math.round(progress)
-                  : 0;
+                  ? `${Math.round(progress)}%`
+                  : "0%";
 
           return (
             <button
@@ -116,15 +121,15 @@ export function StageProgress({
                     />
                   )}
                 </div>
-                <div className="stage-node__percent">{stagePercent}%</div>
+                <div className="stage-node__percent">{stageIndicator}</div>
               </div>
-              <div className="stage-node__index">Stage 0{index + 1}</div>
+              <div className="stage-node__index">阶段 0{index + 1}</div>
               <div className={`stage-node__name ${isActive ? "stage-node__name--active" : ""}`}>
                 {stage.name}
               </div>
               <div className="stage-node__desc">{stage.desc}</div>
               <div className="stage-node__status">
-                {forceCompletedProgress
+                {completedProject
                   ? isActive
                     ? "查看中"
                     : "已完成"

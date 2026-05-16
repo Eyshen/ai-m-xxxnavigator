@@ -17,6 +17,7 @@ interface ExperimentWorkspaceProps {
   playbackLoops?: RunningPlaybackLoopItem[];
   reviewMode?: boolean;
   playbackComplete?: boolean;
+  playbackPaused?: boolean;
   canShowFocusedDetails?: boolean;
   currentModelLoop?: ExperimentLoop;
   currentModelComplete?: boolean;
@@ -26,6 +27,8 @@ interface ExperimentWorkspaceProps {
   onChangeView: (view: FrontendAppState["experimentView"]) => void;
   onToggleSuccessful: () => void;
   onSelectLoop: (loopId: number) => void;
+  onTogglePlayback?: () => void;
+  onJumpToCurrentLoop?: () => void;
   onToggleExperiment: (experimentId: string) => void;
   onAddLoop: () => void;
   onGoDeploy: () => void;
@@ -64,6 +67,7 @@ export function ExperimentWorkspace({
   playbackLoops,
   reviewMode = false,
   playbackComplete = false,
+  playbackPaused = false,
   canShowFocusedDetails = true,
   currentModelLoop,
   currentModelComplete = true,
@@ -73,6 +77,8 @@ export function ExperimentWorkspace({
   onChangeView,
   onToggleSuccessful,
   onSelectLoop,
+  onTogglePlayback,
+  onJumpToCurrentLoop,
   onToggleExperiment,
   onAddLoop,
   onGoDeploy,
@@ -102,6 +108,9 @@ export function ExperimentWorkspace({
   const footerSummary = bestLoop
     ? `已完成 ${completedCount} 轮自动实验，当前最佳方案为 ${bestLoop.name}。`
     : `已完成 ${completedCount} 轮自动实验，待当前 Loop 完成后展示最佳方案。`;
+  const hasLivePlayback = !reviewMode && Boolean(playbackLoops?.length) && !playbackComplete;
+  const selectedRunningLoop =
+    playbackLoops?.find((loop) => loop.id === state.activeLoopId && loop.status === "running") ?? null;
 
   return (
     <section className="panel">
@@ -139,14 +148,22 @@ export function ExperimentWorkspace({
 
       <div className={`status-banner ${shouldEarlyStop ? "status-banner--success" : ""}`}>
         <span className="status-banner__title">
-          {!bestLoop ? "当前 Loop 生成中" : shouldEarlyStop ? "已达到目标，可提前结束实验" : "实验仍在搜索更优方案"}
+          {hasLivePlayback && playbackPaused
+            ? "自动回放已暂停，可先查看已完成实验"
+            : !bestLoop
+              ? "当前 Loop 生成中"
+              : shouldEarlyStop
+                ? "已达到目标，可提前结束实验"
+                : "实验仍在搜索更优方案"}
         </span>
         <span className="status-banner__text">
-          {!bestLoop
-            ? `当前暂无已完成实验结果，${heroLoop.name} 完成后将更新最佳 ${state.optimizationMetric}。`
-            : shouldEarlyStop
-            ? `当前最佳 ${state.optimizationMetric} 为 ${bestLoop.auc.toFixed(4)}，已满足本次演示目标。`
-            : `当前最多运行 ${state.experimentRounds} 轮，若后续收益不足可保持当前最佳方案。`}
+          {hasLivePlayback && playbackPaused
+            ? "你可以切换已完成的 Loop 查看细节，继续回放后会恢复自动推进。"
+            : !bestLoop
+              ? `当前暂无已完成实验结果，${heroLoop.name} 完成后将更新最佳 ${state.optimizationMetric}。`
+              : shouldEarlyStop
+                ? `当前最佳 ${state.optimizationMetric} 为 ${bestLoop.auc.toFixed(4)}，已满足本次演示目标。`
+                : `当前最多运行 ${state.experimentRounds} 轮，若后续收益不足可保持当前最佳方案。`}
         </span>
       </div>
 
@@ -183,9 +200,21 @@ export function ExperimentWorkspace({
         </div>
 
         <div className="toolbar__actions">
+          {hasLivePlayback ? (
+            <button className="btn btn--ghost" onClick={onTogglePlayback} type="button">
+              <Icon name={playbackPaused ? "play" : "clock"} size={14} color="#6c6258" />
+              {playbackPaused ? "继续回放" : "暂停回放"}
+            </button>
+          ) : null}
+          {hasLivePlayback && !selectedRunningLoop ? (
+            <button className="btn btn--ghost" onClick={onJumpToCurrentLoop} type="button">
+              <Icon name="zap" size={14} color="#6c6258" />
+              回到当前 Loop
+            </button>
+          ) : null}
           <button className="switch-button" onClick={onToggleSuccessful} type="button">
             <span className={`switch-button__dot ${state.successfulOnly ? "switch-button__dot--on" : ""}`} />
-            只看成功假设
+            结果表仅看成功假设
           </button>
           {!reviewMode ? (
             <button className="btn btn--ghost" onClick={onDownload} type="button">
@@ -213,9 +242,9 @@ export function ExperimentWorkspace({
                 className={`loop-item ${state.activeLoopId === loopId ? "loop-item--active" : ""} ${
                   isPending ? "loop-item--pending" : ""
                 } ${isRunning ? "loop-item--running" : ""}`}
-                onClick={() => !isPending && playbackComplete && onSelectLoop(loopId)}
+                onClick={() => !isPending && onSelectLoop(loopId)}
                 type="button"
-                disabled={isPending || !playbackComplete}
+                disabled={isPending}
               >
                 <div className="loop-item__main">
                   <span
@@ -242,6 +271,8 @@ export function ExperimentWorkspace({
                     <div className="loop-item__meta">
                       {"note" in loop
                         ? loop.note
+                        : isRunning
+                          ? "正在生成"
                         : loop.status === "success"
                           ? "收益有效"
                           : "方案淘汰"}

@@ -17,8 +17,11 @@ interface DataIntakePanelProps {
   onRequirementChange: (value: string) => void;
   onMetricChange: (value: FrontendAppState["optimizationMetric"]) => void;
   onRoundsChange: (value: string) => void;
+  onRoundsBlur: () => void;
   onValidationRatioChange: (value: string) => void;
+  onValidationRatioBlur: () => void;
   onOptimizationTargetChange: (value: string) => void;
+  onOptimizationTargetBlur: () => void;
   onFileUpload: (fileName: string) => void;
   onSubmitRequirement: () => void;
 }
@@ -32,8 +35,11 @@ export function DataIntakePanel({
   onRequirementChange,
   onMetricChange,
   onRoundsChange,
+  onRoundsBlur,
   onValidationRatioChange,
+  onValidationRatioBlur,
   onOptimizationTargetChange,
+  onOptimizationTargetBlur,
   onFileUpload,
   onSubmitRequirement
 }: DataIntakePanelProps) {
@@ -66,48 +72,55 @@ export function DataIntakePanel({
           <h2 className="panel__title">数据接入与建模输入</h2>
         </div>
         <p className="panel__desc">
-          填写本次建模要求，设置实验上限并上传训练数据，系统会在得到满足要求的模型后提前终止实验。
+          先上传训练数据，再补充建模要求和实验边界。准备完成后，即可进入自动实验。
         </p>
       </div>
 
-      <div className="phase-glance">
-        <article className="phase-glance__card">
-          <span className="phase-glance__label">建模要求</span>
-          <strong className="phase-glance__value">{requirementReady ? "已填写" : "待填写"}</strong>
-          <span className="phase-glance__meta">先描述本次建模要求</span>
-        </article>
-        <article className="phase-glance__card">
-          <span className="phase-glance__label">自动实验配置</span>
-          <strong className="phase-glance__value">{configValid ? "规则通过" : "待校验"}</strong>
-          <span className="phase-glance__meta">
-            {state.experimentRounds} 轮 / {state.validationRatio}% 验证集
+      <div className="intake-priority">
+        <article
+          className={`intake-priority__item ${hasFile ? "intake-priority__item--done" : ""}`}
+        >
+          <span className="intake-priority__step">第一步</span>
+          <strong className="intake-priority__title">上传训练数据</strong>
+          <span className="intake-priority__meta">
+            {hasFile
+              ? state.isProcessing
+                ? "字段结构解析中"
+                : `已上传 ${state.uploadedFile}`
+              : "支持 CSV、Excel、JSON"}
           </span>
         </article>
-        <article className="phase-glance__card">
-          <span className="phase-glance__label">训练数据</span>
-          <strong className="phase-glance__value">{hasFile ? "已上传" : "待上传"}</strong>
-          <span className="phase-glance__meta">{datasetSummary.source}</span>
+        <article
+          className={`intake-priority__item ${requirementReady ? "intake-priority__item--done" : ""}`}
+        >
+          <span className="intake-priority__step">第二步</span>
+          <strong className="intake-priority__title">补充建模要求</strong>
+          <span className="intake-priority__meta">
+            {requirementReady ? "需求已填写，可继续校验配置" : "说明目标、样本范围与交付口径"}
+          </span>
         </article>
-        <article className="phase-glance__card">
-          <span className="phase-glance__label">目标指标</span>
-          <strong className="phase-glance__value">
-            {state.optimizationMetric} {state.optimizationTarget.toFixed(2)}
-          </strong>
-          <span className="phase-glance__meta">科技感演示模式</span>
+        <article
+          className={`intake-priority__item ${canSubmit ? "intake-priority__item--done" : ""}`}
+        >
+          <span className="intake-priority__step">第三步</span>
+          <strong className="intake-priority__title">提交自动实验</strong>
+          <span className="intake-priority__meta">
+            {canSubmit ? "已满足启动条件" : "仍需完成上传或修正配置"}
+          </span>
         </article>
       </div>
 
-      <div className="intake-grid">
+      <div className="intake-grid intake-grid--primary">
         <article className="input-card input-card--dialogue">
           <div className="input-card__header input-card__header--stack">
             <div className="input-card__badge">
               <Icon name="messageSquare" size={18} color="#eff8ff" />
             </div>
             <div className="input-card__body">
-              <div className="input-card__eyebrow">优先输入</div>
+              <div className="input-card__eyebrow">第二步</div>
               <h3 className="input-card__title">请先描述本次建模要求</h3>
               <p className="input-card__text">
-                用自然语言说明预测目标、样本范围、业务口径和交付要求，便于快速调整 UI 展示时仍保持内容一致。
+                用自然语言说明预测目标、样本范围、业务口径和交付要求，让后续实验输出更贴近实际场景。
               </p>
             </div>
           </div>
@@ -126,7 +139,7 @@ export function DataIntakePanel({
               type="button"
               onClick={() => onRequirementChange(templateToUse)}
             >
-              填入推荐提示词
+              填入推荐示例
             </button>
             {hasFile && !state.isProcessing ? (
               <div className="inline-success">
@@ -136,15 +149,65 @@ export function DataIntakePanel({
           </div>
         </article>
 
-        <article className="input-card">
+        <article className="upload-card upload-card--primary">
+          <div className="input-card__header">
+            <div className="input-card__icon">
+              <Icon name="upload" size={20} color="#1f6fff" />
+            </div>
+            <div>
+              <div className="input-card__eyebrow">第一步</div>
+              <h3 className="input-card__title">上传训练数据并等待结构解析</h3>
+              <p className="input-card__text">
+                先把数据放进来，页面会立即反馈字段数、样本量和目标字段，方便你确认是否是正确数据源。
+              </p>
+            </div>
+          </div>
+          <div className="upload-card__chips">
+            <span
+              className={`upload-card__chip ${
+                hasFile && !state.isProcessing ? "upload-card__chip--success" : ""
+              }`}
+            >
+              {hasFile ? (state.isProcessing ? "解析中" : "已上传") : "待上传"}
+            </span>
+            <span className="upload-card__chip">{datasetSummary.fields} 个字段</span>
+            <span className="upload-card__chip">{datasetSummary.rows.toLocaleString()} 条样本</span>
+            <span className="upload-card__chip">目标字段 {datasetSummary.target}</span>
+          </div>
+          <label className={`dropzone ${state.isProcessing ? "dropzone--busy" : ""}`}>
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls,.json"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  onFileUpload(file.name);
+                }
+              }}
+            />
+            <div className="dropzone__icon">
+              <Icon name="upload" size={30} color="#8fd4ff" />
+            </div>
+            <div className="dropzone__title">
+              {state.uploadedFile ? `已上传: ${state.uploadedFile}` : "点击上传或拖拽文件到此处"}
+            </div>
+            <div className="dropzone__subtitle">
+              支持 CSV、Excel、JSON 格式，将自动识别样本量、字段数与字段类型
+            </div>
+          </label>
+        </article>
+      </div>
+
+      <article className="input-card input-card--config">
           <div className="input-card__header">
             <div className="input-card__icon">
               <Icon name="settings" size={20} color="#1f6fff" />
             </div>
             <div>
+              <div className="input-card__eyebrow">第三步前确认</div>
               <h3 className="input-card__title">自动实验配置</h3>
               <p className="input-card__text">
-                设置自动实验的搜索上限。实际运行可能在达到目标后提前终止，不一定跑满最大轮次。
+                设置自动实验的搜索上限。输入时保留你的原始值，失焦后再自动校正为合法范围。
               </p>
             </div>
           </div>
@@ -175,6 +238,7 @@ export function DataIntakePanel({
                   placeholder="0.95"
                   value={state.optimizationTargetInput}
                   onChange={(event) => onOptimizationTargetChange(event.target.value)}
+                  onBlur={onOptimizationTargetBlur}
                 />
               </div>
               <span className={`field__message ${validationErrors.optimizationTarget ? "field__message--error" : ""}`}>
@@ -194,6 +258,7 @@ export function DataIntakePanel({
                   step="1"
                   value={state.experimentRoundsInput}
                   onChange={(event) => onRoundsChange(event.target.value)}
+                  onBlur={onRoundsBlur}
                 />
                 <span className="field__value field__value--suffix">轮</span>
               </div>
@@ -213,6 +278,7 @@ export function DataIntakePanel({
                   step="1"
                   value={state.validationRatioInput}
                   onChange={(event) => onValidationRatioChange(event.target.value)}
+                  onBlur={onValidationRatioBlur}
                 />
                 <span className="field__value field__value--suffix">%</span>
               </div>
@@ -227,51 +293,6 @@ export function DataIntakePanel({
             当前将优先优化 {state.optimizationMetric} {state.optimizationTarget.toFixed(2)}，
             并保留每一轮实验的假设、证据和指标变化。
           </div>
-        </article>
-      </div>
-
-      <article className="upload-card">
-        <div className="input-card__header">
-          <div className="input-card__icon">
-            <Icon name="upload" size={20} color="#1f6fff" />
-          </div>
-          <div>
-            <div className="input-card__eyebrow">上传文件模块</div>
-            <h3 className="input-card__title">上传训练数据并等待结构解析</h3>
-            <p className="input-card__text">
-              保留当前演示数据与展示内容，只优化上传和状态感知，让页面更适合快速部署和反复调 UI。
-            </p>
-          </div>
-        </div>
-        <div className="upload-card__chips">
-          <span className={`upload-card__chip ${hasFile && !state.isProcessing ? "upload-card__chip--success" : ""}`}>
-            {hasFile ? (state.isProcessing ? "解析中" : "已上传") : "待上传"}
-          </span>
-          <span className="upload-card__chip">{datasetSummary.fields} 个字段</span>
-          <span className="upload-card__chip">{datasetSummary.rows.toLocaleString()} 条样本</span>
-          <span className="upload-card__chip">目标字段 {datasetSummary.target}</span>
-        </div>
-        <label className={`dropzone ${state.isProcessing ? "dropzone--busy" : ""}`}>
-          <input
-            type="file"
-            accept=".csv,.xlsx,.xls,.json"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) {
-                onFileUpload(file.name);
-              }
-            }}
-          />
-          <div className="dropzone__icon">
-            <Icon name="upload" size={30} color="#8fd4ff" />
-          </div>
-          <div className="dropzone__title">
-            {state.uploadedFile ? `已上传: ${state.uploadedFile}` : "点击上传或拖拽文件到此处"}
-          </div>
-          <div className="dropzone__subtitle">
-            支持 CSV、Excel、JSON 格式，将自动识别样本量、字段数与字段类型
-          </div>
-        </label>
       </article>
 
       {state.isProcessing ? (
@@ -290,7 +311,7 @@ export function DataIntakePanel({
           type="button"
         >
           <Icon name="play" size={14} color="#fff8ee" />
-          提交需求
+          启动自动实验
         </button>
       </div>
     </section>
