@@ -11,6 +11,12 @@ function formatMetric(value?: number) {
   return typeof value === "number" ? value.toFixed(4) : "--";
 }
 
+const deployLinks = [
+  { label: "使用说明页", url: "http://服务器IP:8090/usage" },
+  { label: "在线文档", url: "http://服务器IP:8090/docs" },
+  { label: "预测接口", url: "http://服务器IP:8090/predict" }
+];
+
 export function CompletedProjectResult({
   project,
   selectedModel,
@@ -26,7 +32,7 @@ export function CompletedProjectResult({
           <h2 className="panel__title">模型结果与部署下载</h2>
         </div>
         <p className="panel__desc">
-          已完成项目默认进入结果页。你可以切换候选模型、查看指标数据，并直接下载对应模型压缩包。
+          模型生成已完成。你可以查看指标数据，并直接下载模型压缩包。
         </p>
       </div>
 
@@ -34,14 +40,7 @@ export function CompletedProjectResult({
         <div>
           <div className="completed-hero__label">当前项目</div>
           <div className="completed-hero__title">{project.name}</div>
-          <p className="completed-hero__text">{project.summary}</p>
-        </div>
-        <div className="completed-hero__chips">
-          <span className="artifact-pill">{project.dataset.name}</span>
-          <span className="artifact-pill">
-            {project.dataset.rows.toLocaleString()} x {project.dataset.columns}
-          </span>
-          <span className="artifact-pill">目标字段 {project.dataset.target}</span>
+          {project.summary ? <p className="completed-hero__text">{project.summary}</p> : null}
         </div>
       </div>
 
@@ -104,8 +103,7 @@ export function CompletedProjectResult({
           <div className="experiment-hero">
             <div>
               <div className="experiment-hero__label">模型说明</div>
-              <div className="experiment-hero__title">{selectedModel.modelName}</div>
-              <p className="experiment-hero__text">{selectedModel.deploymentSummary ?? selectedModel.summary}</p>
+              <div className="experiment-hero__title">风控模型</div>
             </div>
             <div className="experiment-hero__metrics">
               <article className="hero-metric">
@@ -119,24 +117,62 @@ export function CompletedProjectResult({
             </div>
           </div>
 
-          <div className="completed-metrics-grid">
-            <article className="mini-kpi">
-              <span className="mini-kpi__label">F1 Score</span>
-              <strong>{formatMetric(selectedModel.f1Score)}</strong>
-            </article>
-            <article className="mini-kpi">
-              <span className="mini-kpi__label">Accuracy</span>
-              <strong>{formatMetric(selectedModel.accuracy)}</strong>
-            </article>
-            <article className="mini-kpi">
-              <span className="mini-kpi__label">Recall</span>
-              <strong>{formatMetric(selectedModel.recall)}</strong>
-            </article>
-            <article className="mini-kpi">
-              <span className="mini-kpi__label">特征数</span>
-              <strong>{selectedModel.featureCount ?? "--"}</strong>
-            </article>
-          </div>
+          <section className="deploy-guide">
+            <div className="deploy-guide__header">
+              <div>
+                <div className="deploy-guide__eyebrow">模型部署说明</div>
+                <h3 className="deploy-guide__title">简单部署步骤</h3>
+              </div>
+              <div className="deploy-guide__badge">服务器部署</div>
+            </div>
+
+            <div className="deploy-guide__grid">
+              <article className="deploy-step-card">
+                <div className="deploy-step-card__index">01</div>
+                <div className="deploy-step-card__body">
+                  <div className="deploy-step-card__title">把项目上传到服务器</div>
+                  <div className="deploy-step-card__desc">
+                    将下载后的模型包上传到目标服务器，并解压到业务目录中。
+                  </div>
+                </div>
+              </article>
+
+              <article className="deploy-step-card">
+                <div className="deploy-step-card__index">02</div>
+                <div className="deploy-step-card__body">
+                  <div className="deploy-step-card__title">进入项目目录</div>
+                  <pre className="deploy-code-block">
+                    <code>cd /root/ss/模型包名</code>
+                  </pre>
+                </div>
+              </article>
+
+              <article className="deploy-step-card">
+                <div className="deploy-step-card__index">03</div>
+                <div className="deploy-step-card__body">
+                  <div className="deploy-step-card__title">启动模型服务</div>
+                  <pre className="deploy-code-block">
+                    <code>./start.sh</code>
+                  </pre>
+                </div>
+              </article>
+
+              <article className="deploy-step-card">
+                <div className="deploy-step-card__index">04</div>
+                <div className="deploy-step-card__body">
+                  <div className="deploy-step-card__title">打开页面使用</div>
+                  <div className="deploy-link-list">
+                    {deployLinks.map((link) => (
+                      <div key={link.url} className="deploy-link-card">
+                        <div className="deploy-link-card__label">{link.label}</div>
+                        <div className="deploy-link-card__url">{link.url}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
 
           <div className="ready-box">
             <div className="ready-box__icon">

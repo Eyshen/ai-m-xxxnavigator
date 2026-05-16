@@ -35,10 +35,8 @@ export function ReadOnlyDataIntakePanel({
         </article>
         <article className="phase-glance__card">
           <span className="phase-glance__label">自动实验配置</span>
-          <strong className="phase-glance__value">
-            {state.experimentRounds} 轮 / {state.validationRatio}%
-          </strong>
-          <span className="phase-glance__meta">实验轮次与验证集比例</span>
+          <strong className="phase-glance__value">{state.experimentRounds} 轮</strong>
+          <span className="phase-glance__meta">实验轮次与目标指标设置</span>
         </article>
         <article className="phase-glance__card">
           <span className="phase-glance__label">训练数据</span>
@@ -98,10 +96,6 @@ export function ReadOnlyDataIntakePanel({
             <div className="field">
               <span className="field__label">实验轮次</span>
               <div className="field__static">{state.experimentRounds} 轮</div>
-            </div>
-            <div className="field">
-              <span className="field__label">验证集比例</span>
-              <div className="field__static">{state.validationRatio}%</div>
             </div>
           </div>
 

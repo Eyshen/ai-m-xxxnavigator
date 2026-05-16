@@ -295,15 +295,12 @@ export function WorkspacePage() {
     const nextCreatedProject: FrontendProject = {
       ...initialProject,
       projectId: `created-project-${Date.now()}`,
-      name: `新建模项目 ${projects.length + 1}`,
+      name: `欺诈交易建模-${String(projects.length + 1).padStart(2, "0")}`,
       time: "刚刚",
       summary: "新项目待创建，请填写建模要求并上传数据。"
     };
 
-    setProjects((current) => [
-      ...current,
-      nextCreatedProject
-    ]);
+    setProjects((current) => [...current, nextCreatedProject]);
     setState(createAppStateFromProject(nextCreatedProject));
   };
 
@@ -534,7 +531,6 @@ export function WorkspacePage() {
             selectedStageId={project.status === "completed" ? completedReviewStage : undefined}
             uploadedFile={state.uploadedFile}
             experimentRounds={state.experimentRounds}
-            validationRatio={state.validationRatio}
             metricName={stageMetricName}
             bestMetric={stageMetricValue}
             interactive={project.status === "completed"}
@@ -550,7 +546,6 @@ export function WorkspacePage() {
               validationErrors={validationErrors}
               configValid={configValid}
               requirementTemplates={createdData?.requirementTemplates ?? quickRequirementTemplates}
-              datasetSummary={datasetSummary}
               onRequirementChange={(value) =>
                 setState((current) => ({
                   ...current,
@@ -601,41 +596,6 @@ export function WorkspacePage() {
                       current.experimentRounds,
                       true
                     ) ?? current.experimentRounds
-                }))
-              }
-              onValidationRatioChange={(value) =>
-                setState((current) => {
-                  return {
-                    ...current,
-                    validationRatioInput: value,
-                    validationRatio:
-                      normalizeInputWithReset(
-                        value,
-                        0,
-                        100,
-                        current.validationRatio
-                      ) ?? current.validationRatio
-                  };
-                })
-              }
-              onValidationRatioBlur={() =>
-                setState((current) => ({
-                  ...current,
-                  validationRatioInput: String(
-                    normalizeInputWithReset(
-                      current.validationRatioInput,
-                      0,
-                      100,
-                      current.validationRatio
-                    ) ?? current.validationRatio
-                  ),
-                  validationRatio:
-                    normalizeInputWithReset(
-                      current.validationRatioInput,
-                      0,
-                      100,
-                      current.validationRatio
-                    ) ?? current.validationRatio
                 }))
               }
               onOptimizationTargetChange={(value) =>

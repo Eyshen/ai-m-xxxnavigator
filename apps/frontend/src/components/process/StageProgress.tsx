@@ -7,7 +7,6 @@ interface StageProgressProps {
   selectedStageId?: StageId;
   uploadedFile: string | null;
   experimentRounds: number;
-  validationRatio: number;
   metricName: string;
   bestMetric: string | null;
   interactive?: boolean;
@@ -21,7 +20,6 @@ export function StageProgress({
   selectedStageId,
   uploadedFile,
   experimentRounds,
-  validationRatio,
   metricName,
   bestMetric,
   interactive = false,
@@ -45,13 +43,11 @@ export function StageProgress({
       ? [
           { label: "训练数据", value: uploadedFile ? "已上传" : "待上传" },
           { label: "优化指标", value: metricName },
-          { label: "最大轮次", value: `${experimentRounds} 轮` },
-          { label: "验证集", value: `${validationRatio}%` }
+          { label: "最大轮次", value: `${experimentRounds} 轮` }
         ]
       : [
           { label: `最佳 ${metricName}`, value: bestMetric ?? "--" },
-          { label: "最大轮次", value: `${experimentRounds} 轮` },
-          { label: "验证集", value: `${validationRatio}%` }
+          { label: "最大轮次", value: `${experimentRounds} 轮` }
         ];
 
   return (

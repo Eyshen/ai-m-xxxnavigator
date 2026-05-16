@@ -9,32 +9,8 @@
   },
   {
     "id": 2,
-    "projectId": "customer-churn-model",
-    "name": "欺诈交易建模-02",
-    "time": "昨天",
-    "status": "completed",
-    "summary": "已完成客户流失模型实验，可查看最佳模型和下载包。"
-  },
-  {
-    "id": 3,
-    "projectId": "marketing-response-model",
-    "name": "欺诈交易建模-03",
-    "time": "3天前",
-    "status": "completed",
-    "summary": "已完成营销响应率建模，可切换候选模型。"
-  },
-  {
-    "id": 4,
-    "projectId": "fraud-transfer-running",
-    "name": "欺诈交易建模-04",
-    "time": "刚刚",
-    "status": "completed",
-    "summary": "项目已完成，可查看候选模型并下载部署压缩包。"
-  },
-  {
-    "id": 5,
     "projectId": "new-modeling-project",
-    "name": "欺诈交易建模-05",
+    "name": "欺诈交易建模-02",
     "time": "刚刚",
     "status": "created",
     "summary": "新项目待创建，请填写建模要求并上传数据。"

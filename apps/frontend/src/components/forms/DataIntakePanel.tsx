@@ -4,22 +4,14 @@ import type { FrontendAppState } from "@/types/app";
 interface DataIntakePanelProps {
   state: FrontendAppState;
   validationErrors: Partial<
-    Record<"experimentRounds" | "validationRatio" | "optimizationTarget", string>
+    Record<"experimentRounds" | "optimizationTarget", string>
   >;
   configValid: boolean;
   requirementTemplates: string[];
-  datasetSummary: {
-    fields: number;
-    rows: number;
-    target: string;
-    source: string;
-  };
   onRequirementChange: (value: string) => void;
   onMetricChange: (value: FrontendAppState["optimizationMetric"]) => void;
   onRoundsChange: (value: string) => void;
   onRoundsBlur: () => void;
-  onValidationRatioChange: (value: string) => void;
-  onValidationRatioBlur: () => void;
   onOptimizationTargetChange: (value: string) => void;
   onOptimizationTargetBlur: () => void;
   onFileUpload: (fileName: string) => void;
@@ -31,13 +23,10 @@ export function DataIntakePanel({
   validationErrors,
   configValid,
   requirementTemplates,
-  datasetSummary,
   onRequirementChange,
   onMetricChange,
   onRoundsChange,
   onRoundsBlur,
-  onValidationRatioChange,
-  onValidationRatioBlur,
   onOptimizationTargetChange,
   onOptimizationTargetBlur,
   onFileUpload,
@@ -87,7 +76,7 @@ export function DataIntakePanel({
               ? state.isProcessing
                 ? "字段结构解析中"
                 : `已上传 ${state.uploadedFile}`
-              : "支持 CSV、Excel、JSON"}
+              : "上传文件并完成解析"}
           </span>
         </article>
         <article
@@ -158,22 +147,17 @@ export function DataIntakePanel({
               <div className="input-card__eyebrow">第一步</div>
               <h3 className="input-card__title">上传训练数据并等待结构解析</h3>
               <p className="input-card__text">
-                先把数据放进来，页面会立即反馈字段数、样本量和目标字段，方便你确认是否是正确数据源。
+                先把数据放进来，解析成功后会进入可提交状态，适合快速完成首轮实验准备。
               </p>
             </div>
           </div>
-          <div className="upload-card__chips">
-            <span
-              className={`upload-card__chip ${
-                hasFile && !state.isProcessing ? "upload-card__chip--success" : ""
-              }`}
-            >
-              {hasFile ? (state.isProcessing ? "解析中" : "已上传") : "待上传"}
-            </span>
-            <span className="upload-card__chip">{datasetSummary.fields} 个字段</span>
-            <span className="upload-card__chip">{datasetSummary.rows.toLocaleString()} 条样本</span>
-            <span className="upload-card__chip">目标字段 {datasetSummary.target}</span>
-          </div>
+          {hasFile && !state.isProcessing ? (
+            <div className="upload-card__chips">
+              <span className="upload-card__chip upload-card__chip--success">
+                上传文件并解析成功
+              </span>
+            </div>
+          ) : null}
           <label className={`dropzone ${state.isProcessing ? "dropzone--busy" : ""}`}>
             <input
               type="file"
@@ -192,7 +176,7 @@ export function DataIntakePanel({
               {state.uploadedFile ? `已上传: ${state.uploadedFile}` : "点击上传或拖拽文件到此处"}
             </div>
             <div className="dropzone__subtitle">
-              支持 CSV、Excel、JSON 格式，将自动识别样本量、字段数与字段类型
+              支持 CSV、Excel、JSON 格式
             </div>
           </label>
         </article>
@@ -264,27 +248,6 @@ export function DataIntakePanel({
               </div>
               <span className={`field__message ${validationErrors.experimentRounds ? "field__message--error" : ""}`}>
                 {validationErrors.experimentRounds ?? "直接输入轮次，不再使用拖拽条。"}
-              </span>
-            </label>
-
-            <label className="field">
-              <span className="field__label">验证集比例</span>
-              <div className="field__input-row">
-                <input
-                  className={`field__input ${validationErrors.validationRatio ? "field__input--invalid" : ""}`}
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={state.validationRatioInput}
-                  onChange={(event) => onValidationRatioChange(event.target.value)}
-                  onBlur={onValidationRatioBlur}
-                />
-                <span className="field__value field__value--suffix">%</span>
-              </div>
-              <span className={`field__message ${validationErrors.validationRatio ? "field__message--error" : ""}`}>
-                {validationErrors.validationRatio ??
-                  `输入 ${state.validationRatioInput || state.validationRatio}% 时将按百分比展示。`}
               </span>
             </label>
           </div>

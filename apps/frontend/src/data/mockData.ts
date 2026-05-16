@@ -21,9 +21,6 @@ import projectListSource from "../../../../docs/frontend/data/project-list.json"
 import workflowStagesSource from "../../../../docs/frontend/data/workflow-stages.json";
 import sharedUiSource from "../../../../docs/frontend/data/shared-ui.json";
 import creditRiskProjectSource from "../../../../docs/frontend/data/projects/credit-risk-model.json";
-import customerChurnProjectSource from "../../../../docs/frontend/data/projects/customer-churn-model.json";
-import marketingResponseProjectSource from "../../../../docs/frontend/data/projects/marketing-response-model.json";
-import fraudTransferRunningProjectSource from "../../../../docs/frontend/data/projects/fraud-transfer-running.json";
 import newModelingProjectSource from "../../../../docs/frontend/data/projects/new-modeling-project.json";
 import fraudTransferRunningLoopsSource from "../../../../docs/frontend/data/runs/fraud-transfer-running-loops.json";
 import fraudTransferRunningLogSource from "../../../../docs/frontend/data/runs/fraud-transfer-running-log.json";
@@ -51,7 +48,6 @@ const FRAUD_REVIEW_REQUIREMENT =
   "请基于转账行为、设备指纹、账户关系和时序特征，建立欺诈交易识别模型，重点识别高风险转账并输出适合风控评审的关键影响因素。";
 const FRAUD_TARGET_AUC = 0.9012;
 const FRAUD_TARGET_AUC_TEXT = FRAUD_TARGET_AUC.toFixed(4);
-const FRAUD_TARGET_KS = 0.7042;
 
 function cloneLoops(loops: ExperimentLoop[]) {
   return loops.map((loop) => ({
@@ -263,30 +259,10 @@ const completedCredit = withCompletedReview(
   withDatasetFallback(creditRiskProjectSource) as FrontendProject,
   buildCompletedExperimentSnapshot(defaultExperimentLoops)
 );
-const completedChurn = withCompletedReview(
-  withDatasetFallback(customerChurnProjectSource) as FrontendProject,
-  buildCompletedExperimentSnapshot(defaultExperimentLoops)
-);
-const completedMarketing = withCompletedReview(
-  withDatasetFallback(marketingResponseProjectSource) as FrontendProject,
-  buildCompletedExperimentSnapshot(defaultExperimentLoops)
-);
-
-const completedFraud = {
-  ...withCompletedReview(
-    withDatasetFallback(fraudTransferRunningProjectSource) as FrontendProject,
-    buildCompletedExperimentSnapshot(fraudReviewLoops, fraudReviewLogs)
-  ),
-  running: fraudRunningTemplate
-} satisfies FrontendProject;
-
 const createdProject = newModelingProjectSource as FrontendProject;
 
 export const frontendProjects: FrontendProject[] = [
   completedCredit,
-  completedChurn,
-  completedMarketing,
-  completedFraud,
   createdProject
 ];
 
@@ -513,5 +489,5 @@ export function getCreatedProjectData(project: FrontendProject): CreatedProjectD
 }
 
 export function getDefaultCompletedTemplate(): CompletedProjectData {
-  return completedFraud.completed as CompletedProjectData;
+  return completedCredit.completed as CompletedProjectData;
 }

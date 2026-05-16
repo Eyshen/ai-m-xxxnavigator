@@ -4,7 +4,7 @@
   "status": "completed",
   "entryView": "completed",
   "time": "2小时前",
-  "summary": "信用卡逾期风险预测项目已完成，当前可切换部署模型并下载压缩包。",
+  "summary": "",
   "dataset": {
     "name": "credit-risk-demo.csv",
     "rows": 12000,
@@ -17,44 +17,19 @@
     "models": [
       {
         "modelId": "credit-xgboost-v1",
-        "modelName": "XGBoost 风险评分模型",
+        "modelName": "风控模型",
         "version": "v1.0.0",
         "status": "recommended",
         "primaryMetricName": "AUC",
         "primaryMetricValue": 0.8542,
         "ks": 0.6234,
-        "f1Score": 0.812,
-        "accuracy": 0.886,
-        "recall": 0.794,
-        "featureCount": 42,
         "trainedAt": "2026-05-13 16:40",
         "summary": "当前最佳方案，适合直接进入部署评审。",
-        "deploymentSummary": "基于稳定业务衍生特征与阈值校准，排序能力最佳。",
+        "deploymentSummary": "",
         "package": {
           "packageName": "credit-risk-xgboost-v1.zip",
           "downloadUrl": "/mock-model-packages/credit-risk-xgboost-v1.zip",
-          "sizeLabel": "1.2 MB"
-        }
-      },
-      {
-        "modelId": "credit-lightgbm-v2",
-        "modelName": "LightGBM 解释增强模型",
-        "version": "v2.1.0",
-        "status": "available",
-        "primaryMetricName": "AUC",
-        "primaryMetricValue": 0.8421,
-        "ks": 0.6037,
-        "f1Score": 0.798,
-        "accuracy": 0.878,
-        "recall": 0.781,
-        "featureCount": 39,
-        "trainedAt": "2026-05-13 15:10",
-        "summary": "指标略低于最佳方案，但解释性更强。",
-        "deploymentSummary": "适合强调可解释性的业务评审场景。",
-        "package": {
-          "packageName": "credit-risk-lightgbm-v2.zip",
-          "downloadUrl": "/mock-model-packages/credit-risk-lightgbm-v2.zip",
-          "sizeLabel": "1.0 MB"
+          "sizeLabel": "5.5 MB"
         }
       }
     ]
