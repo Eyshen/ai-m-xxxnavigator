@@ -93,7 +93,7 @@ export function DataIntakePanel({
           <strong className="phase-glance__value">
             {state.optimizationMetric} {state.optimizationTarget.toFixed(2)}
           </strong>
-          <span className="phase-glance__meta">科技感演示模式</span>
+          <span className="phase-glance__meta">目标指标</span>
         </article>
       </div>
 

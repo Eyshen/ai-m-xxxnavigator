@@ -241,7 +241,7 @@ const fraudRunningTemplate: RunningProjectData = {
     { label: "识别字段", value: "61", meta: "自动字段识别" },
     { label: "扫描样本", value: "300,000", meta: "交易样本规模" },
     { label: "成功 LOOP", value: "2", meta: "收益成立方案" },
-    { label: "最佳 AUC", value: "0.912", meta: "当前最优模型" },
+    { label: "最佳 AUC", value: "0.89491", meta: "当前最优模型" },
     { label: "结果项", value: "6", meta: "可追溯实验记录" }
   ],
   loops: cloneLoops(fraudReviewLoops),

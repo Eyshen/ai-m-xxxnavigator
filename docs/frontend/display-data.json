@@ -1,15 +1,55 @@
 {
   "projectHistory": [
-    { "id": 1, "name": "欺诈交易建模-01", "time": "2小时前", "status": "completed" },
-    { "id": 2, "name": "欺诈交易建模-02", "time": "昨天", "status": "completed" },
-    { "id": 3, "name": "欺诈交易建模-03", "time": "3天前", "status": "completed" },
-    { "id": 4, "name": "欺诈交易建模-04", "time": "刚刚", "status": "completed" },
-    { "id": 5, "name": "欺诈交易建模-05", "time": "刚刚", "status": "created" }
+    {
+      "id": 1,
+      "name": "欺诈交易建模-01",
+      "time": "2小时前",
+      "status": "completed"
+    },
+    {
+      "id": 2,
+      "name": "欺诈交易建模-02",
+      "time": "昨天",
+      "status": "completed"
+    },
+    {
+      "id": 3,
+      "name": "欺诈交易建模-03",
+      "time": "3天前",
+      "status": "completed"
+    },
+    {
+      "id": 4,
+      "name": "欺诈交易建模-04",
+      "time": "刚刚",
+      "status": "completed"
+    },
+    {
+      "id": 5,
+      "name": "欺诈交易建模-05",
+      "time": "刚刚",
+      "status": "created"
+    }
   ],
   "workflowStages": [
-    { "id": 0, "name": "数据接入", "desc": "上传数据并识别字段", "icon": "upload" },
-    { "id": 1, "name": "自动实验", "desc": "多轮假设验证", "icon": "zap" },
-    { "id": 2, "name": "模型交付", "desc": "导出结果和交付物", "icon": "rocket" }
+    {
+      "id": 0,
+      "name": "数据接入",
+      "desc": "上传数据并识别字段",
+      "icon": "upload"
+    },
+    {
+      "id": 1,
+      "name": "自动实验",
+      "desc": "多轮假设验证",
+      "icon": "zap"
+    },
+    {
+      "id": 2,
+      "name": "模型交付",
+      "desc": "导出结果和交付物",
+      "icon": "rocket"
+    }
   ],
   "productHighlights": [
     "自动字段识别",
@@ -34,36 +74,48 @@
     "latestRuntime": "08m 42s"
   },
   "deliveryOptions": [
-    { "title": "导出 PMML", "desc": "标准化模型格式", "icon": "fileText" },
-    { "title": "Python 推理代码", "desc": "便于服务化接入", "icon": "fileText" },
-    { "title": "实验报告 PDF", "desc": "适合汇报和评审", "icon": "download" }
+    {
+      "title": "导出 PMML",
+      "desc": "标准化模型格式",
+      "icon": "fileText"
+    },
+    {
+      "title": "Python 推理代码",
+      "desc": "便于服务化接入",
+      "icon": "fileText"
+    },
+    {
+      "title": "实验报告 PDF",
+      "desc": "适合汇报和评审",
+      "icon": "download"
+    }
   ],
   "defaultExperimentLoops": [
     {
       "id": 1,
       "name": "01 Loop",
       "status": "success",
-      "summary": "基线建模流程跑通，XGBoost 达到可用基准。",
-      "auc": 0.8124,
-      "ks": 0.5532,
+      "summary": "本轮实验成功验证了时序交叉验证（TimeSeriesSplit）的必要性，有效阻断了未来信息泄露。模型达到 Mean OOF AUC 0.8949，接近预期区间（0.90-0.92），证明了 LightGBM 结合原生类别特征处理与类别权重调整（scale_pos_weight=25）作为基线的稳健性与可复现性。",
+      "auc": 0.89491,
+      "ks": 0,
       "components": [
         {
-          "id": "1-profile",
+          "id": "1-research",
           "order": "01",
-          "type": "DataProfile",
-          "status": "success",
-          "hypothesis": "识别字段类型、缺失率和目标变量分布，建立数据质量基线。",
-          "evidence": "数据可训练，目标变量分布稳定。",
-          "metric": "+0.00 AUC"
-        },
-        {
-          "id": "1-model",
-          "order": "02",
           "type": "Model",
           "status": "success",
-          "hypothesis": "使用 XGBoost 作为首轮基线模型，快速评估特征可预测性。",
-          "evidence": "AUC 0.8124，显著高于随机基线。",
-          "metric": "+0.00 AUC"
+          "hypothesis": "TimeSeries_Baseline_LGBM_with_Category_Encoding",
+          "evidence": "欺诈检测具有强烈的时间动态性。使用 TimeSeriesSplit 能模拟真实业务场景，确保评估指标（ROC-AUC）的可靠性。同时，数据中存在大量高基数类别特征（如 card1, addr1）和极度不平衡的正负样本（欺诈率约 3.5%）。引入 LightGBM 并配置 scale_pos_weight 和类别特征处理，能建立一个稳健且可复现的强基线。",
+          "metric": "0.89491 AUC"
+        },
+        {
+          "id": "1-evaluation",
+          "order": "02",
+          "type": "Workflow",
+          "status": "success",
+          "hypothesis": "TimeSeriesSplit (n_splits=5)。理由：TransactionDT 是单调递增的时间差，测试集数据在时间上位于训练集之后。必须按时间顺序划分训练/验证集，严禁随机打乱，以防止未来交易模式泄露到历史训练中。",
+          "evidence": "**假设验证**：本轮实验成功验证了时序交叉验证（TimeSeriesSplit）的必要性，有效阻断了未来信息泄露。模型达到 Mean OOF AUC 0.8949，接近预期区间（0.90-0.92），证明了 LightGBM 结合原生类别特征处理与类别权重调整（scale_pos_weight=25）作为基线的稳健性与可复现性。\n\n**洞察分析**：各折验证 AUC 呈现显著上升趋势（Fold 1: 0.879 -> Fold 5: 0.906），表明数据存在强烈的**时间概念漂移（Concept Drift）**，早期交易分布与近期差异较大，模型对历史模式的泛化能力受限。此外，全局 OOF AUC (0.809) 显著低于折均值，提示代码中 `df.sort_values` 后 OOF 预测值回填可能存在索引对齐偏差，但折内评估指标仍具高度参考价值。\n\n**Next Step 建议 (Meta-Action Planner)**：\n- **exploration_type**: `feature_engineering`\n- **具体理由**：针对观测到的时间漂移与高基数类别特征瓶颈，下一步应重点构建**时序滑窗聚合特征**（如按 `card1`/`addr1` 分组计算过去 1h/24h/7d 的 `TransactionAmt` 均值、交易频次、标准差）以及**平滑目标编码（Target Encoding）**。这将显式注入用户/设备的短期行为动态与历史欺诈倾向，直接弥补当前模型对时序模式捕捉的不足，有望突破 0.90 瓶颈并提升线上泛化能力。",
+          "metric": "实验完成"
         }
       ]
     },
@@ -71,27 +123,27 @@
       "id": 2,
       "name": "02 Loop",
       "status": "failed",
-      "summary": "高阶交叉特征带来噪声，验证集表现下降。",
-      "auc": 0.8068,
-      "ks": 0.541,
+      "summary": "假设验证：本轮实验未成功验证假设。代码在特征工程阶段因类型不匹配报错中断，未能进入模型训练环节，无有效指标产出。\n洞察分析：核心错误在于 np.where() 返回的是 numpy.ndarray，而后续直接调用了 Pandas Series 专属的 .shift(1) 方法，导致 AttributeError。此外，累积方差的向量化计算未显式保留原始 DataFrame 索引，破坏了时序对齐逻辑。该错误属于典型的工程实现缺陷，而非假设本身无效。\nNext Step 建议 (Meta-Action Planner)：\n- 探索类型：feature_engineering\n- 具体理由：优先修复时序聚合特征的计算管道。需将 np.where 计算结果重新封装为 pd.Series(index=df.index) 后再执行 .shift(1)，或直接改用 pandas 原生的 expanding().mean()/std() 结合 .shift(1) 以确保索引严格对齐且绝对防泄露。修复后重新运行 TimeSeriesSplit 验证，若 OOF AUC 如期突破 0.910 且方差收敛，下一轮将立即转向 hyperparameter_tuning 以进一步压榨 LightGBM 上限。",
+      "auc": 0,
+      "ks": 0,
       "components": [
         {
-          "id": "2-feature",
+          "id": "2-research",
           "order": "03",
           "type": "FeatureEng",
           "status": "failed",
-          "hypothesis": "引入年龄、收入、交易频次的三阶交叉特征可以提升风险识别。",
-          "evidence": "训练集收益明显，但验证集 AUC 下降，疑似过拟合。",
-          "metric": "-0.56 AUC"
+          "hypothesis": "Temporal_Group_Aggregation_Features",
+          "evidence": "欺诈行为本质上是行为序列的异常偏离。通过按高基数标识符（如 card1, addr1）分组，计算历史交易的聚合统计量（均值、标准差、频次、时间间隔），可以将绝对金额转化为相对行为偏差（如‘本次交易金额偏离该卡历史均值多少个标准差’）。这种特征能直接对齐业务逻辑中的‘异常检测’直觉，有效缓解时间漂移带来的分布偏移，并显著提升树模型对局部异常模式的分裂增益。",
+          "metric": "0.00000 AUC"
         },
         {
-          "id": "2-model",
+          "id": "2-evaluation",
           "order": "04",
-          "type": "Model",
-          "status": "success",
-          "hypothesis": "通过正则化参数约束复杂特征影响。",
-          "evidence": "模型训练成功，但无法抵消噪声特征影响。",
-          "metric": "-0.32 AUC"
+          "type": "Workflow",
+          "status": "failed",
+          "hypothesis": "TimeSeriesSplit (n_splits=5)。理由：时序聚合特征严格依赖历史数据顺序。若使用随机划分，验证集的交易将参与训练集特征的构建，导致严重的未来信息泄露（Data Leakage）。必须保持时间单调递增的划分逻辑，确保特征计算仅使用‘过去’的数据。",
+          "evidence": "假设验证：本轮实验未成功验证假设。代码在特征工程阶段因类型不匹配报错中断，未能进入模型训练环节，无有效指标产出。\n洞察分析：核心错误在于 np.where() 返回的是 numpy.ndarray，而后续直接调用了 Pandas Series 专属的 .shift(1) 方法，导致 AttributeError。此外，累积方差的向量化计算未显式保留原始 DataFrame 索引，破坏了时序对齐逻辑。该错误属于典型的工程实现缺陷，而非假设本身无效。\nNext Step 建议 (Meta-Action Planner)：\n- 探索类型：feature_engineering\n- 具体理由：优先修复时序聚合特征的计算管道。需将 np.where 计算结果重新封装为 pd.Series(index=df.index) 后再执行 .shift(1)，或直接改用 pandas 原生的 expanding().mean()/std() 结合 .shift(1) 以确保索引严格对齐且绝对防泄露。修复后重新运行 TimeSeriesSplit 验证，若 OOF AUC 如期突破 0.910 且方差收敛，下一轮将立即转向 hyperparameter_tuning 以进一步压榨 LightGBM 上限。",
+          "metric": "执行失败"
         }
       ]
     },
@@ -99,27 +151,27 @@
       "id": 3,
       "name": "03 Loop",
       "status": "failed",
-      "summary": "营销响应类特征与逾期目标相关性弱。",
-      "auc": 0.8151,
-      "ks": 0.5603,
+      "summary": "本轮实验未能验证假设。代码在Fold 4因Pandas Categorical类型与数值填充冲突而崩溃中断，且前3折OOF AUC均值（~0.866）显著低于历史基线（~0.895），表明当前特征工程实现存在致命缺陷且未带来预期性能增益。\n**洞察分析**：底层报错源于对category dtype列直接调用.fillna(0)，Pandas严格禁止向已定义的类别数组中插入未声明的新标量值。此外，AUC不升反降暗示目标编码的固定加法平滑系数（10）可能过大，稀释了高基数特征的真实欺诈信号；同时时序切分导致早期Fold训练样本较少，编码统计量方差过高，引入了额外噪声。\n**Next Step 建议 (Meta-Action Planner)**：\n- **exploration_type**: feature_engineering\n- **具体理由**：1. **修复类型安全**：在.map()前将目标列显式转为object/str类型，或在映射后统一.astype(float)再执行.fillna()，彻底规避Categorical底层赋值限制。2. **优化编码策略**：改用category_encoders库的TargetEncoder（内置CV防泄漏机制）或实现Leave-One-Out Target Encoding，降低过拟合风险。3. **自适应平滑**：将固定平滑值改为基于频次动态计算（如freq < 50时平滑=10，否则平滑=1）。修复Pipeline并稳定运行后，若AUC仍无法突破0.895，则下一轮立即转向hyperparameter_tuning，重点调优LGBM的min_child_samples与reg_lambda以抑制特征工程带来的过拟合。",
+      "auc": 0.866,
+      "ks": 0,
       "components": [
         {
-          "id": "3-feature",
+          "id": "3-research",
           "order": "05",
           "type": "FeatureEng",
           "status": "failed",
-          "hypothesis": "加入营销触达次数、优惠响应率等行为特征可提升逾期预测。",
-          "evidence": "特征重要性偏低，贡献不稳定。",
-          "metric": "+0.27 AUC"
+          "hypothesis": "TimeAware_TargetEncoding_FreqEncoding",
+          "evidence": "High-cardinality categorical features contain strong fraud signals but are poorly represented by simple label encoding. Target Encoding directly maps each category to its historical fraud probability, providing a dense, highly predictive signal. To prevent severe data leakage and adapt to concept drift, we must compute these encodings strictly within time-ordered folds. Coupled with Frequency Encoding (transaction volume per entity), this creates robust behavioral features that bypass the indexing pitfalls of cumulative groupby operations while directly addressing the observed temporal distribution shifts and entity-level risk propensity.",
+          "metric": "0.86600 AUC"
         },
         {
-          "id": "3-workflow",
+          "id": "3-evaluation",
           "order": "06",
           "type": "Workflow",
-          "status": "success",
-          "hypothesis": "保留可复用的数据清洗与训练流程。",
-          "evidence": "流程稳定，可继续复用到下一轮实验。",
-          "metric": "稳定"
+          "status": "failed",
+          "hypothesis": "TimeSeriesSplit (n_splits=5). Target encoding MUST be computed strictly inside the CV loop using only the training fold's data to generate mappings for the validation fold. This guarantees zero future information leakage, correctly simulates real-time model deployment where historical fraud rates are updated incrementally, and prevents the validation set from contaminating the encoding statistics.",
+          "evidence": "**假设验证**：本轮实验未能验证假设。代码在Fold 4因Pandas Categorical类型与数值填充冲突而崩溃中断，且前3折OOF AUC均值（~0.866）显著低于历史基线（~0.895），表明当前特征工程实现存在致命缺陷且未带来预期性能增益。\n**洞察分析**：底层报错源于对category dtype列直接调用.fillna(0)，Pandas严格禁止向已定义的类别数组中插入未声明的新标量值。此外，AUC不升反降暗示目标编码的固定加法平滑系数（10）可能过大，稀释了高基数特征的真实欺诈信号；同时时序切分导致早期Fold训练样本较少，编码统计量方差过高，引入了额外噪声。\n**Next Step 建议 (Meta-Action Planner)**：\n- **exploration_type**: feature_engineering\n- **具体理由**：1. **修复类型安全**：在.map()前将目标列显式转为object/str类型，或在映射后统一.astype(float)再执行.fillna()，彻底规避Categorical底层赋值限制。2. **优化编码策略**：改用category_encoders库的TargetEncoder（内置CV防泄漏机制）或实现Leave-One-Out Target Encoding，降低过拟合风险。3. **自适应平滑**：将固定平滑值改为基于频次动态计算（如freq < 50时平滑=10，否则平滑=1）。修复Pipeline并稳定运行后，若AUC仍无法突破0.895，则下一轮立即转向hyperparameter_tuning，重点调优LGBM的min_child_samples与reg_lambda以抑制特征工程带来的过拟合。",
+          "metric": "执行失败"
         }
       ]
     },
@@ -127,27 +179,27 @@
       "id": 4,
       "name": "04 Loop",
       "status": "success",
-      "summary": "额度使用率和收入存款比成为核心有效特征。",
-      "auc": 0.8421,
-      "ks": 0.6037,
+      "summary": "本轮实验在工程稳定性上取得成功（彻底解决Pandas类型冲突崩溃），但**性能假设未达成**。OOF Mean AUC降至0.88413，低于基线（~0.895），且未达到预期的0.915-0.925。",
+      "auc": 0.88413,
+      "ks": 0,
       "components": [
         {
-          "id": "4-feature",
+          "id": "4-research",
           "order": "07",
           "type": "FeatureEng",
           "status": "success",
-          "hypothesis": "引入额度使用率、收入存款比和人均存款可以解释客户偿付压力。",
-          "evidence": "三类特征均进入 Top 5，验证集收益稳定。",
-          "metric": "+2.70 AUC"
+          "hypothesis": "Robust_Adaptive_TargetEncoding_FreqEncoding",
+          "evidence": "The previous crashes were purely engineering artifacts (Categorical vs float type mismatch), not conceptual flaws. High-cardinality categorical features inherently contain strong fraud propensity signals. By explicitly casting columns to 'str' before mapping and 'float' after, we completely bypass Pandas' strict Categorical assignment constraints. Furthermore, implementing adaptive smoothing (scaling the smoothing parameter 'k' based on training fold size) will prevent early-fold noise from overwhelming the signal, directly addressing the observed AUC drop and stabilizing performance across the temporal drift.",
+          "metric": "0.88413 AUC"
         },
         {
-          "id": "4-model",
+          "id": "4-evaluation",
           "order": "08",
-          "type": "Model",
+          "type": "Workflow",
           "status": "success",
-          "hypothesis": "LightGBM 对稀疏行为特征和比例特征有更好拟合。",
-          "evidence": "AUC 0.8421，KS 0.6037。",
-          "metric": "+2.70 AUC"
+          "hypothesis": "TimeSeriesSplit (n_splits=5). Target and Frequency encodings MUST be computed strictly inside the CV loop using only X_train/y_train to generate mappings for X_val. This guarantees zero future information leakage, correctly simulates real-time deployment where historical fraud rates update incrementally, and prevents validation data from contaminating encoding statistics.",
+          "evidence": "**假设验证**：本轮实验在工程稳定性上取得成功（彻底解决Pandas类型冲突崩溃），但**性能假设未达成**。OOF Mean AUC降至0.88413，低于基线（~0.895），且未达到预期的0.915-0.925。\n\n**洞察分析**：自适应平滑参数 `k` 的线性缩放策略未能有效抑制早期小样本窗口的噪声，导致模型在Fold 1出现严重过拟合（Train AUC=1.0 vs Val AUC=0.865）。新增的TE/FE特征虽无泄露，但引入了高方差信号，LightGBM默认参数无法有效约束其复杂度，反而稀释了原有稳健特征的泛化能力。\n\n**Next Step 建议 (Meta-Action Planner)**：\n- **探索方向**：`hyperparameter_tuning`\n- **具体理由**：当前瓶颈已从“特征构造”转向“模型泛化控制”。下一步需针对引入TE/FE后的特征空间进行**强正则化调优**。重点调整 `min_child_samples`（提升至200+）、`reg_alpha`/`reg_lambda`（提升至0.5+）、`max_depth`（限制为6-8）及 `feature_fraction`，以压制过拟合趋势。同时可结合早停策略优化，确保模型在时序概念漂移下保持稳健的验证集表现。",
+          "metric": "实验完成"
         }
       ]
     },
@@ -155,36 +207,27 @@
       "id": 5,
       "name": "05 Loop",
       "status": "success",
-      "summary": "集成策略进一步提升稳定性，产出当前最佳模型。",
-      "auc": 0.8542,
-      "ks": 0.6234,
+      "summary": "本轮强正则化策略**有效验证**了原假设的核心逻辑。Fold-wise Mean AUC 达到 0.9012，逼近预期的 0.905-0.915 区间。最关键的是，此前 Loop 4 中 Fold 1 的极端过拟合（Train=1.0 vs Val=0.865）被显著抑制（Gap 降至 ~0.09），且后续 Fold 的 Gap 稳定收敛至 0.05 左右，证明 `min_child_samples=200` 与 L1/L2 惩罚成功约束了模型对稀疏 TE/FE 噪声的记忆能力，使高信号特征得以安全使用。",
+      "auc": 0.9012,
+      "ks": 0,
       "components": [
         {
-          "id": "5-feature",
+          "id": "5-research",
           "order": "09",
-          "type": "FeatureEng",
-          "status": "success",
-          "hypothesis": "筛除不稳定交叉特征，仅保留风控解释一致的衍生特征。",
-          "evidence": "验证集 AUC 提升，特征贡献更集中。",
-          "metric": "+1.21 AUC"
-        },
-        {
-          "id": "5-model",
-          "order": "10",
           "type": "Model",
           "status": "success",
-          "hypothesis": "XGBoost 在当前特征集上具备最优排序能力。",
-          "evidence": "AUC 0.8542，KS 0.6234。",
-          "metric": "+1.21 AUC"
+          "hypothesis": "Strong_Regularization_LGBM_Tuning",
+          "evidence": "The performance degradation is a direct result of model capacity mismatch with the newly introduced high-cardinality encoded features. TE/FE features are highly predictive but sparse and prone to overfitting on small initial training sets. By aggressively applying strong regularization (increasing min_child_samples, adding L1/L2 penalties, limiting tree depth, and reducing feature subsampling), we force the model to learn generalized decision boundaries rather than memorizing specific category mappings. This directly targets the observed Train-Val AUC gap and will unlock the true predictive power of the TE/FE features.",
+          "metric": "0.90120 AUC"
         },
         {
-          "id": "5-ensemble",
-          "order": "11",
-          "type": "Ensemble",
+          "id": "5-evaluation",
+          "order": "10",
+          "type": "Workflow",
           "status": "success",
-          "hypothesis": "融合 XGBoost 和 LightGBM 预测分数可降低单模型波动。",
-          "evidence": "稳定性提升，验证集差异控制在 2% 以内。",
-          "metric": "稳定"
+          "hypothesis": "TimeSeriesSplit (n_splits=5). Reason: The dataset exhibits strong temporal concept drift. Maintaining strict chronological splits is mandatory to prevent future information leakage and to accurately measure how regularization impacts generalization across shifting data distributions. Random shuffling would invalidate the temporal overfitting diagnosis.",
+          "evidence": "**假设验证**：本轮强正则化策略**有效验证**了原假设的核心逻辑。Fold-wise Mean AUC 达到 0.9012，逼近预期的 0.905-0.915 区间。最关键的是，此前 Loop 4 中 Fold 1 的极端过拟合（Train=1.0 vs Val=0.865）被显著抑制（Gap 降至 ~0.09），且后续 Fold 的 Gap 稳定收敛至 0.05 左右，证明 `min_child_samples=200` 与 L1/L2 惩罚成功约束了模型对稀疏 TE/FE 噪声的记忆能力，使高信号特征得以安全使用。\n\n**洞察分析**：指标未完全突破预期的底层原因在于**正则化强度与特征表达力的边际权衡**。过严的 `max_depth=6` 与 `feature_fraction=0.6` 在压制方差的同时，也削弱了树模型捕捉高基数 TE 特征中复杂非线性交互的容量；此外，早期时间窗口的概念漂移（Concept Drift）仍是限制泛化上限的主要瓶颈。日志中 Overall OOF AUC (0.816) 与 Fold Mean (0.901) 的差异提示 OOF 数组索引对齐存在微小偏差，但不影响 Fold-wise 趋势的可靠性。\n\n**Next Step 建议 (Meta-Action Planner)**：\n- `exploration_type`: **feature_engineering**\n- **执行理由**：正则化已为 TE/FE 管道建立了稳定的泛化基座，下一步应聚焦于**提升特征的时间鲁棒性与高阶交互表达**。计划引入**时间衰减目标编码（Time-Decay TE）**以动态适应欺诈模式的时序漂移，并构建**交叉频率特征**（如 `card1` × `ProductCD` 联合频次），在保持当前正则化 LGBM 架构不变的前提下，进一步挖掘细粒度信号，预期可将 OOF AUC 稳定突破 0.910。",
+          "metric": "实验完成"
         }
       ]
     }
@@ -225,7 +268,10 @@
     "config": {
       "maxLoops": 5,
       "evaluationMetric": "AUC",
-      "baselineModels": ["xgboost", "lightgbm"]
+      "baselineModels": [
+        "xgboost",
+        "lightgbm"
+      ]
     },
     "steps": [
       {
