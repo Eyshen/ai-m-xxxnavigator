@@ -27,12 +27,15 @@ import {
 } from "@/data/mockData";
 import { downloadJson } from "@/utils/download";
 import type {
+  ExperimentLoop,
   FrontendAppState,
   FrontendProject,
   RunningPlaybackLog,
   RunningPlaybackLoopItem,
   RunningPlaybackMetricItem,
-  RunningPlaybackStep
+  RunningPlaybackStep,
+  TrainingEvolutionStep,
+  TrainingLoopLog
 } from "@/types/app";
 import { useEffect, useState } from "react";
 
@@ -121,6 +124,14 @@ function sliceTextProgressively(text: string, ratio: number) {
   return safe.slice(0, length);
 }
 
+function getBestLoop(loops: ExperimentLoop[]) {
+  if (loops.length === 0) {
+    return null;
+  }
+
+  return loops.reduce((winner, loop) => (loop.auc > winner.auc ? loop : winner), loops[0]);
+}
+
 const PLAYBACK_PHASES = [
   "intro",
   "meta",
@@ -129,6 +140,7 @@ const PLAYBACK_PHASES = [
   "steps",
   "evaluation",
   "feedback",
+  "completed_hold",
   "done"
 ] as const;
 
@@ -139,9 +151,12 @@ export function WorkspacePage() {
   const [projects, setProjects] = useState<FrontendProject[]>(getInitialEditableProjects());
   const [playbackState, setPlaybackState] = useState<{
     activeLoopIndex: number;
+    focusedLoopIndex: number;
     phase: PlaybackPhase;
     stepRevealIndex: number;
     textTick: number;
+    playbackComplete: boolean;
+    manualSelectedLoopId: number | null;
   } | null>(null);
   const project =
     projects.find((item) => item.projectId === state.projectId) ?? projects[0] ?? initialProject;
@@ -176,14 +191,17 @@ export function WorkspacePage() {
 
     setPlaybackState({
       activeLoopIndex: 0,
+      focusedLoopIndex: 0,
       phase: "intro",
       stepRevealIndex: 0,
-      textTick: 0
+      textTick: 0,
+      playbackComplete: false,
+      manualSelectedLoopId: null
     });
   }, [project.status, state.projectId, state.experimentLoops]);
 
   useEffect(() => {
-    if (project.status !== "running" || !playbackState) {
+    if (project.status !== "running" || !playbackState || playbackState.playbackComplete) {
       return;
     }
 
@@ -205,24 +223,51 @@ export function WorkspacePage() {
 
         if (current.phase === "done") {
           if (current.activeLoopIndex >= state.experimentLoops.length - 1) {
-            return current;
+            return {
+              ...current,
+              playbackComplete: true,
+              manualSelectedLoopId: current.manualSelectedLoopId
+            };
           }
 
           return {
             activeLoopIndex: current.activeLoopIndex + 1,
+            focusedLoopIndex: current.focusedLoopIndex,
             phase: "intro",
             stepRevealIndex: 0,
-            textTick: 0
+            textTick: 0,
+            playbackComplete: false,
+            manualSelectedLoopId: current.manualSelectedLoopId
+          };
+        }
+
+        if (current.phase === "feedback") {
+          return {
+            ...current,
+            focusedLoopIndex: current.activeLoopIndex,
+            phase: "completed_hold",
+            textTick: current.textTick + 1,
+            playbackComplete: false,
+            manualSelectedLoopId:
+              state.experimentLoops[current.activeLoopIndex]?.id ??
+              current.manualSelectedLoopId
           };
         }
 
         return {
           ...current,
           phase: PLAYBACK_PHASES[currentPhaseIndex + 1] ?? "done",
-          textTick: current.textTick + 1
+          textTick: current.textTick + 1,
+          playbackComplete: false
         };
       });
-    }, playbackState.phase === "steps" ? 900 : 700);
+    }, playbackState.phase === "steps"
+      ? 900
+      : playbackState.phase === "completed_hold"
+        ? playbackState.activeLoopIndex === state.experimentLoops.length - 1
+          ? 1600
+          : 900
+        : 700);
 
     return () => window.clearTimeout(timer);
   }, [project.status, playbackState, state.experimentLoops]);
@@ -256,21 +301,49 @@ export function WorkspacePage() {
   const runningData = getRunningProjectData(project);
   const createdData = getCreatedProjectData(project);
   const completedData = getCompletedProjectData(project);
+  const currentPlaybackLoop =
+    project.status === "running" && playbackState
+      ? state.experimentLoops[playbackState.activeLoopIndex] ?? null
+      : null;
+  const currentLoopCompleted =
+    project.status !== "running" ||
+    !playbackState ||
+    playbackState.playbackComplete ||
+    playbackState.phase === "completed_hold" ||
+    playbackState.phase === "done";
   const revealedLoopCount =
     project.status === "running" && playbackState
       ? Math.min(playbackState.activeLoopIndex + 1, state.experimentLoops.length)
+      : state.experimentLoops.length;
+  const completedLoopCount =
+    project.status === "running" && playbackState
+      ? playbackState.playbackComplete
+        ? state.experimentLoops.length
+        : Math.min(
+            playbackState.activeLoopIndex + (currentLoopCompleted ? 1 : 0),
+            state.experimentLoops.length
+          )
       : state.experimentLoops.length;
   const visibleExperimentLoops =
     project.status === "running"
       ? state.experimentLoops.slice(0, revealedLoopCount)
       : state.experimentLoops;
+  const completedExperimentLoops =
+    project.status === "running"
+      ? state.experimentLoops.slice(0, completedLoopCount)
+      : state.experimentLoops;
   const playbackLoops: RunningPlaybackLoopItem[] =
     project.status === "running"
       ? state.experimentLoops.map((loop, index) => {
           const isVisible = index < revealedLoopCount;
-          const allLoopsRevealed = revealedLoopCount >= state.experimentLoops.length;
           const isCurrent =
-            !allLoopsRevealed && playbackState && index === playbackState.activeLoopIndex;
+            Boolean(
+              playbackState &&
+                index === playbackState.activeLoopIndex &&
+                !playbackState.playbackComplete &&
+                playbackState.phase !== "completed_hold" &&
+                playbackState.phase !== "done"
+            );
           if (!isVisible) {
             return {
               id: loop.id,
@@ -284,7 +357,7 @@ export function WorkspacePage() {
             name: loop.name,
             status: isCurrent ? "running" : loop.status,
             score: loop.auc,
-            note: isCurrent ? "生成中" : loop.status === "success" ? "收益有效" : "方案淘汰"
+            note: isCurrent ? "模型生成中" : loop.status === "success" ? "收益有效" : "方案淘汰"
           };
         })
       : [];
@@ -292,10 +365,17 @@ export function WorkspacePage() {
     project.status === "running"
       ? playbackLoops.filter((loop, index) => index < revealedLoopCount)
       : playbackLoops;
-  const visibleBestLoop = visibleExperimentLoops.reduce(
-    (winner, loop) => (loop.auc > winner.auc ? loop : winner),
-    visibleExperimentLoops[0] ?? state.experimentLoops[0]
-  );
+  const bestCompletedLoop = getBestLoop(completedExperimentLoops);
+  const focusedLoopId =
+    project.status === "running" && playbackState
+      ? playbackState.playbackComplete && playbackState.manualSelectedLoopId
+        ? playbackState.manualSelectedLoopId
+        : visibleExperimentLoops[playbackState.focusedLoopIndex]?.id ??
+        visibleExperimentLoops[visibleExperimentLoops.length - 1]?.id ??
+        state.activeLoopId
+      : state.activeLoopId;
+  const canShowFocusedDetails = currentLoopCompleted;
+  const playbackComplete = project.status !== "running" || !playbackState || playbackState.playbackComplete;
   const playbackMetrics: RunningPlaybackMetricItem[] =
     project.status === "running"
       ? (getRunningOverviewMetrics(project) ?? []).map((item, index) => ({
@@ -303,8 +383,8 @@ export function WorkspacePage() {
           value:
             index === 2
               ? String(playbackLoops.filter((loop) => loop.status === "success").length)
-              : index === 3 && visibleBestLoop
-                ? visibleBestLoop.auc.toFixed(4)
+              : index === 3
+                ? bestCompletedLoop?.auc.toFixed(4) ?? "--"
                 : index === 4
                   ? String(
                       visibleExperimentLoops.flatMap((loop) => loop.components).length
@@ -315,7 +395,7 @@ export function WorkspacePage() {
       : [];
   const playbackLogs: RunningPlaybackLog[] =
     project.status === "running"
-      ? (runningData?.loopLogs ?? []).map((log, index) => {
+      ? (runningData?.loopLogs ?? []).map((log: TrainingLoopLog, index: number) => {
           const loopIsVisible = index < revealedLoopCount;
           const isCurrentLoop =
             playbackState && index === playbackState.activeLoopIndex;
@@ -326,12 +406,12 @@ export function WorkspacePage() {
               ? log.research.proposed_actions.length
               : 0;
           const feedbackRatio =
-            phase === "feedback" || phase === "done"
+            phase === "feedback"
               ? Math.min(1, Math.max(0, textTick / 8))
               : phase === "done"
                 ? 1
                 : 0;
-          const steps: RunningPlaybackStep[] = log.development.evolving_steps.map((step, stepIndex) => {
+          const steps: RunningPlaybackStep[] = log.development.evolving_steps.map((step: TrainingEvolutionStep, stepIndex: number) => {
             const stepIsVisible =
               phase === "steps" || phase === "evaluation" || phase === "feedback" || phase === "done"
                 ? stepIndex < (isCurrentLoop ? playbackState.stepRevealIndex : log.development.evolving_steps.length)
@@ -376,14 +456,7 @@ export function WorkspacePage() {
       ? selectedModel.primaryMetricValue.toFixed(4)
       : state.currentStep === 0
         ? null
-        : visibleBestLoop?.auc.toFixed(4) ?? bestLoop.auc.toFixed(4);
-  const stageKsValue =
-    project.status === "completed" && selectedModel
-      ? selectedModel.ks.toFixed(4)
-      : state.currentStep === 0
-        ? null
-        : visibleBestLoop?.ks.toFixed(4) ?? bestLoop.ks.toFixed(4);
-
+        : bestCompletedLoop?.auc.toFixed(4) ?? null;
   return (
     <div className="app-shell">
       <Sidebar
@@ -435,7 +508,6 @@ export function WorkspacePage() {
             validationRatio={state.validationRatio}
             metricName={stageMetricName}
             bestMetric={stageMetricValue}
-            bestKs={stageKsValue}
           />
 
           {project.status === "created" ? (
@@ -571,10 +643,7 @@ export function WorkspacePage() {
               state={{
                 ...state,
                 experimentLoops: visibleExperimentLoops,
-                activeLoopId:
-                  visibleExperimentLoops.find((loop) => loop.id === state.activeLoopId)?.id ??
-                  visibleExperimentLoops[0]?.id ??
-                  state.activeLoopId
+                activeLoopId: focusedLoopId
               }}
               overviewItems={playbackMetrics}
               loopLogs={playbackLogs.filter(
@@ -582,6 +651,12 @@ export function WorkspacePage() {
                   visibleExperimentLoops.find((loop) => loop.id === log.loop_id) !== undefined
               )}
               playbackLoops={visiblePlaybackLoops}
+              playbackComplete={playbackComplete}
+              canShowFocusedDetails={canShowFocusedDetails}
+              currentModelLoop={!playbackComplete ? currentPlaybackLoop ?? undefined : undefined}
+              currentModelComplete={currentLoopCompleted}
+              bestLoop={bestCompletedLoop}
+              completedLoopCount={completedLoopCount}
               workspaceMetrics={workspaceMetrics}
               onChangeView={(view) =>
                 setState((current) => ({ ...current, experimentView: view }))
@@ -593,14 +668,23 @@ export function WorkspacePage() {
                   expandedExperimentId: null
                 }))
               }
-              onSelectLoop={(loopId) =>
+              onSelectLoop={(loopId) => {
+                if (!playbackComplete) return;
                 setState((current) => ({
                   ...current,
                   activeLoopId: loopId,
                   experimentView: "process",
                   expandedExperimentId: null
-                }))
-              }
+                }));
+                setPlaybackState((current) =>
+                  current
+                    ? {
+                        ...current,
+                        manualSelectedLoopId: loopId
+                      }
+                    : current
+                );
+              }}
               onToggleExperiment={(experimentId) =>
                 setState((current) => ({
                   ...current,

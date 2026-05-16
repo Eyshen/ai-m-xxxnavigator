@@ -50,6 +50,48 @@ function cloneLoops(loops: ExperimentLoop[]) {
   }));
 }
 
+function toRunningExperimentLoops(baseLoops: ExperimentLoop[], logs: any[]): ExperimentLoop[] {
+  const baseMap = new Map(baseLoops.map((loop) => [loop.id, loop]));
+
+  return logs.map((log) => {
+    const base = baseMap.get(log.loop_id);
+    const auc = Number(log?.evaluation?.performance?.metrics?.AUC ?? base?.auc ?? 0);
+    const ks = Number(log?.evaluation?.performance?.metrics?.KS ?? base?.ks ?? 0);
+    const summary = base?.summary ?? log?.evaluation?.feedback_analysis?.split("\n")[0] ?? `${log.loop_id} Loop 实验完成`;
+
+    const components = base?.components ?? [
+      {
+        id: `${log.loop_id}-meta`,
+        order: String(log.loop_id * 2 - 1).padStart(2, "0"),
+        type: log.meta_controller?.exploration_type === "Model" ? "Model" : "FeatureEng",
+        status: log.status === "Success" ? "success" : "failed",
+        hypothesis: log.research?.hypothesis_name ?? log.research?.motivation ?? "待补充假设",
+        evidence: log.research?.analysis_of_history ?? "待补充分析",
+        metric: typeof auc === "number" ? `${auc.toFixed(3)} AUC` : "--"
+      },
+      {
+        id: `${log.loop_id}-eval`,
+        order: String(log.loop_id * 2).padStart(2, "0"),
+        type: "Workflow",
+        status: log.status === "Success" ? "success" : "failed",
+        hypothesis: log.research?.validation_strategy ?? "待补充验证策略",
+        evidence: log.evaluation?.feedback_analysis ?? "待补充反馈分析",
+        metric: typeof ks === "number" ? `${ks.toFixed(3)} KS` : "--"
+      }
+    ];
+
+    return {
+      id: log.loop_id,
+      name: `${String(log.loop_id).padStart(2, "0")} Loop`,
+      status: log.status === "Success" ? "success" : "failed",
+      summary,
+      auc,
+      ks,
+      components
+    };
+  });
+}
+
 function normalizeLoopLogRecord(record: any) {
   const research = record?.research ?? {};
   const development = record?.development ?? {};
@@ -104,15 +146,7 @@ const completedCredit = withDatasetFallback(creditRiskProjectSource) as Frontend
 const completedChurn = withDatasetFallback(customerChurnProjectSource) as FrontendProject;
 const completedMarketing = withDatasetFallback(marketingResponseProjectSource) as FrontendProject;
 
-const runningFraud = {
-  ...(fraudTransferRunningProjectSource as FrontendProject),
-  running: {
-    ...(fraudTransferRunningProjectSource.running as RunningProjectData),
-    loops: cloneLoops(fraudTransferRunningLoopsSource as ExperimentLoop[]),
-    activeLoopId: fraudTransferRunningProjectSource.running.activeLoopId,
-    loopLogs: (fraudTransferRunningLogSource as any[]).map(normalizeLoopLogRecord)
-  }
-} satisfies FrontendProject;
+const completedFraud = withDatasetFallback(fraudTransferRunningProjectSource) as FrontendProject;
 
 const createdProject = newModelingProjectSource as FrontendProject;
 
@@ -120,7 +154,7 @@ export const frontendProjects: FrontendProject[] = [
   completedCredit,
   completedChurn,
   completedMarketing,
-  runningFraud,
+  completedFraud,
   createdProject
 ];
 

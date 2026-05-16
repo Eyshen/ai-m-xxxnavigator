@@ -50,7 +50,7 @@ export function Sidebar({
           <div className="sidebar__logo-shape sidebar__logo-shape--bottom" />
         </div>
         <div>
-          <div className="sidebar__title">上海银行建模导航员</div>
+          <div className="sidebar__title">上海银行端到端多Agent自动化建模</div>
           <div className="sidebar__caption">Modeling Workspace</div>
         </div>
       </div>

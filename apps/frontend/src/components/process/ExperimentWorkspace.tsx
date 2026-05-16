@@ -15,6 +15,12 @@ interface ExperimentWorkspaceProps {
   overviewItems?: OverviewMetricItem[];
   loopLogs?: RunningPlaybackLog[] | TrainingLoopLog[];
   playbackLoops?: RunningPlaybackLoopItem[];
+  playbackComplete?: boolean;
+  canShowFocusedDetails?: boolean;
+  currentModelLoop?: ExperimentLoop;
+  currentModelComplete?: boolean;
+  bestLoop?: ExperimentLoop | null;
+  completedLoopCount?: number;
   workspaceMetrics: WorkspaceMetrics;
   onChangeView: (view: FrontendAppState["experimentView"]) => void;
   onToggleSuccessful: () => void;
@@ -46,11 +52,21 @@ function getStatusLabel(status: "success" | "failed") {
   return status === "success" ? "已验证" : "已排除";
 }
 
+function getVisibleFeedback(log: RunningPlaybackLog | TrainingLoopLog) {
+  return "visibleFeedback" in log ? log.visibleFeedback : log.evaluation.feedback_analysis;
+}
+
 export function ExperimentWorkspace({
   state,
   overviewItems,
   loopLogs,
   playbackLoops,
+  playbackComplete = false,
+  canShowFocusedDetails = true,
+  currentModelLoop,
+  currentModelComplete = true,
+  bestLoop: bestLoopOverride,
+  completedLoopCount,
   workspaceMetrics,
   onChangeView,
   onToggleSuccessful,
@@ -61,15 +77,29 @@ export function ExperimentWorkspace({
   onDownload
 }: ExperimentWorkspaceProps) {
   const activeLoop = getActiveLoop(state);
+  const heroLoop = currentModelLoop ?? activeLoop;
   const activeLog =
     loopLogs?.find((log) => log.loop_id === state.activeLoopId) ?? loopLogs?.[0] ?? null;
   const rows = getVisibleRows(state);
   const successCount = state.experimentLoops.filter((loop) => loop.status === "success").length;
-  const bestLoop = state.experimentLoops.reduce(
-    (winner, loop) => (loop.auc > winner.auc ? loop : winner),
-    state.experimentLoops[0]
-  );
-  const shouldEarlyStop = bestLoop.auc >= 0.85;
+  const bestLoop =
+    bestLoopOverride ??
+    state.experimentLoops.reduce(
+      (winner, loop) => (loop.auc > winner.auc ? loop : winner),
+      state.experimentLoops[0]
+    );
+  const shouldEarlyStop = Boolean(bestLoop && bestLoop.auc >= 0.85);
+  const completedCount = completedLoopCount ?? state.experimentLoops.length;
+  const heroSummary = currentModelComplete
+    ? heroLoop.summary
+    : `${heroLoop.name} 正在生成中，完成后展示摘要与指标结果。`;
+  const heroMetricValue = currentModelComplete ? heroLoop.auc.toFixed(4) : "......";
+  const bestLoopSummary = bestLoop
+    ? `最佳模型 ${bestLoop.name}，当前 ${state.optimizationMetric} ${bestLoop.auc.toFixed(4)}`
+    : `待当前 Loop 完成后展示最佳 ${state.optimizationMetric}`;
+  const footerSummary = bestLoop
+    ? `已完成 ${completedCount} 轮自动实验，当前最佳方案为 ${bestLoop.name}。`
+    : `已完成 ${completedCount} 轮自动实验，待当前 Loop 完成后展示最佳方案。`;
 
   return (
     <section className="panel">
@@ -87,18 +117,14 @@ export function ExperimentWorkspace({
 
       <div className="experiment-hero">
         <div>
-          <div className="experiment-hero__label">当前最佳模型</div>
-          <div className="experiment-hero__title">{bestLoop.name}</div>
-          <p className="experiment-hero__text">{bestLoop.summary}</p>
+          <div className="experiment-hero__label">当前模型</div>
+          <div className="experiment-hero__title">{heroLoop.name}</div>
+          <p className="experiment-hero__text">{heroSummary}</p>
         </div>
         <div className="experiment-hero__metrics">
           <article className="hero-metric">
             <span>{state.optimizationMetric}</span>
-            <strong>{bestLoop.auc.toFixed(4)}</strong>
-          </article>
-          <article className="hero-metric">
-            <span>KS</span>
-            <strong>{bestLoop.ks.toFixed(4)}</strong>
+            <strong>{heroMetricValue}</strong>
           </article>
           <article className="hero-metric">
             <span>实验进度</span>
@@ -111,10 +137,12 @@ export function ExperimentWorkspace({
 
       <div className={`status-banner ${shouldEarlyStop ? "status-banner--success" : ""}`}>
         <span className="status-banner__title">
-          {shouldEarlyStop ? "已达到目标，可提前结束实验" : "实验仍在搜索更优方案"}
+          {!bestLoop ? "当前 Loop 生成中" : shouldEarlyStop ? "已达到目标，可提前结束实验" : "实验仍在搜索更优方案"}
         </span>
         <span className="status-banner__text">
-          {shouldEarlyStop
+          {!bestLoop
+            ? `当前暂无已完成实验结果，${heroLoop.name} 完成后将更新最佳 ${state.optimizationMetric}。`
+            : shouldEarlyStop
             ? `当前最佳 ${state.optimizationMetric} 为 ${bestLoop.auc.toFixed(4)}，已满足本次演示目标。`
             : `当前最多运行 ${state.experimentRounds} 轮，若后续收益不足可保持当前最佳方案。`}
         </span>
@@ -181,9 +209,9 @@ export function ExperimentWorkspace({
                 className={`loop-item ${state.activeLoopId === loopId ? "loop-item--active" : ""} ${
                   isPending ? "loop-item--pending" : ""
                 } ${isRunning ? "loop-item--running" : ""}`}
-                onClick={() => !isPending && onSelectLoop(loopId)}
+                onClick={() => !isPending && playbackComplete && onSelectLoop(loopId)}
                 type="button"
-                disabled={isPending}
+                disabled={isPending || !playbackComplete}
               >
                 <div className="loop-item__main">
                   <span
@@ -217,7 +245,7 @@ export function ExperimentWorkspace({
                   </div>
                 </div>
                 <span className="loop-item__score">
-                  {isRealLoop ? loop.auc.toFixed(4) : "......"}
+                  {isRealLoop && !isRunning ? loop.auc.toFixed(4) : "......"}
                 </span>
               </button>
             );
@@ -227,31 +255,39 @@ export function ExperimentWorkspace({
         <div className="workspace-panel">
           {state.experimentView === "process" ? (
             <div className="process-view">
-              <div className="process-hero">
-                <div className="info-box">
-                  <div className="info-box__title">
-                    <Icon name="sparkles" size={16} color="#1f6fff" />
-                    {activeLoop.name} 实验摘要
+              {canShowFocusedDetails ? (
+                <div className="process-hero">
+                  <div className="info-box">
+                    <div className="info-box__title">
+                      <Icon name="sparkles" size={16} color="#1f6fff" />
+                      {activeLoop.name} 实验摘要
+                    </div>
+                    <p>{activeLoop.summary}</p>
                   </div>
-                  <p>{activeLoop.summary}</p>
+                  <div className="mini-kpi-grid">
+                    <article className="mini-kpi">
+                      <span className="mini-kpi__label">{state.optimizationMetric}</span>
+                      <strong>{activeLoop.auc.toFixed(4)}</strong>
+                    </article>
+                    <article className="mini-kpi">
+                      <span className="mini-kpi__label">状态</span>
+                      <strong>{activeLoop.status === "success" ? "推荐保留" : "不进入最终方案"}</strong>
+                    </article>
+                  </div>
                 </div>
-                <div className="mini-kpi-grid">
-                  <article className="mini-kpi">
-                    <span className="mini-kpi__label">{state.optimizationMetric}</span>
-                    <strong>{activeLoop.auc.toFixed(4)}</strong>
-                  </article>
-                  <article className="mini-kpi">
-                    <span className="mini-kpi__label">KS</span>
-                    <strong>{activeLoop.ks.toFixed(4)}</strong>
-                  </article>
-                  <article className="mini-kpi">
-                    <span className="mini-kpi__label">状态</span>
-                    <strong>{activeLoop.status === "success" ? "推荐保留" : "不进入最终方案"}</strong>
-                  </article>
+              ) : (
+                <div className="process-hero process-hero--loading">
+                  <div className="info-box">
+                    <div className="info-box__title">
+                      <Icon name="sparkles" size={16} color="#1f6fff" />
+                      当前 Loop 生成中
+                    </div>
+                    <p>等待当前实验轮次完成后展示详细摘要与指标结果。</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {activeLog ? (
+              {activeLog && canShowFocusedDetails ? (
                 <div className="training-log-card">
                   <div className="training-log-card__header">
                     <div>
@@ -372,50 +408,48 @@ export function ExperimentWorkspace({
                     <article className="training-log-block">
                       <div className="training-log-block__label">Feedback Analysis</div>
                       <div className="training-log-block__text">
-                        {"visibleFeedback" in activeLog
-                          ? activeLog.visibleFeedback || "分析生成中..."
-                          : activeLog.evaluation.feedback_analysis}
+                        {getVisibleFeedback(activeLog) || "分析生成中..."}
                       </div>
                     </article>
                   </div>
                 </div>
               ) : null}
 
-              <div className="process-stack">
-                {activeLoop.components.map((component) => (
-                  <article key={component.id} className="process-card">
-                    <div className="process-card__order">{component.order}</div>
-                    <div className="process-card__type-block">
-                      <div className="process-card__type">{component.type}</div>
-                      <div className="process-card__metric">{component.metric}</div>
-                    </div>
-                    <div className="process-card__copy">
-                      <div className="process-card__section">
-                        <span className="process-card__label">Hypothesis</span>
-                        {component.hypothesis}
+              {canShowFocusedDetails ? (
+                <div className="process-stack">
+                  {activeLoop.components.map((component) => (
+                    <article key={component.id} className="process-card">
+                      <div className="process-card__order">{component.order}</div>
+                      <div className="process-card__type-block">
+                        <div className="process-card__type">{component.type}</div>
+                        <div className="process-card__metric">{component.metric}</div>
                       </div>
-                      <div className="process-card__section">
-                        <span className="process-card__label">Evidence</span>
-                        {component.evidence}
+                      <div className="process-card__copy">
+                        <div className="process-card__section">
+                          <span className="process-card__label">Hypothesis</span>
+                          {component.hypothesis}
+                        </div>
+                        <div className="process-card__section">
+                          <span className="process-card__label">Evidence</span>
+                          {component.evidence}
+                        </div>
                       </div>
-                    </div>
-                    <div
-                      className={`status-pill status-pill--${component.status}`}
-                    >
-                      {getStatusLabel(component.status)}
-                    </div>
-                  </article>
-                ))}
-              </div>
+                      <div
+                        className={`status-pill status-pill--${component.status}`}
+                      >
+                        {getStatusLabel(component.status)}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="result-view">
               <div className="result-summary">
                 <div>
                   <div className="result-summary__label">推荐交付方案</div>
-                  <div className="result-summary__title">
-                    最佳模型 {bestLoop.name}，当前 {state.optimizationMetric} {bestLoop.auc.toFixed(4)}
-                  </div>
+                  <div className="result-summary__title">{bestLoopSummary}</div>
                 </div>
                 <button className="btn btn--primary" onClick={onGoDeploy} type="button">
                   <Icon name="rocket" size={14} color="#fff8ee" />
@@ -431,7 +465,6 @@ export function ExperimentWorkspace({
                   <div>实验假设</div>
                   <div>验证结论</div>
                   <div>详情</div>
-                  <div>交付</div>
                 </div>
 
                 {rows.map(({ loop, component }) => (
@@ -452,12 +485,6 @@ export function ExperimentWorkspace({
                     >
                       {state.expandedExperimentId === component.id ? "−" : "+"}
                     </button>
-                    <div>
-                      <button className="btn btn--ghost" onClick={onGoDeploy} type="button">
-                        <Icon name="rocket" size={14} color="#6c6258" />
-                        部署
-                      </button>
-                    </div>
                     {state.expandedExperimentId === component.id ? (
                       <div className="result-detail">
                         <strong>
@@ -477,9 +504,7 @@ export function ExperimentWorkspace({
       </div>
 
       <div className="workspace-footer">
-        <div className="workspace-footer__note">
-          已完成 {state.experimentLoops.length} 轮自动实验，当前最佳方案为 {bestLoop.name}。
-        </div>
+        <div className="workspace-footer__note">{footerSummary}</div>
         <button className="btn btn--secondary" onClick={onAddLoop} type="button">
           <Icon name="plus" size={14} color="#6c6258" />
           继续一轮实验

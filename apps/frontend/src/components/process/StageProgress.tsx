@@ -9,7 +9,6 @@ interface StageProgressProps {
   validationRatio: number;
   metricName: string;
   bestMetric: string | null;
-  bestKs: string | null;
 }
 
 export function StageProgress({
@@ -19,8 +18,7 @@ export function StageProgress({
   experimentRounds,
   validationRatio,
   metricName,
-  bestMetric,
-  bestKs
+  bestMetric
 }: StageProgressProps) {
   const hasUploadedFile = Boolean(uploadedFile);
   const progress =
@@ -38,7 +36,6 @@ export function StageProgress({
         ]
       : [
           { label: `最佳 ${metricName}`, value: bestMetric ?? "--" },
-          { label: "最佳 KS", value: bestKs ?? "--" },
           { label: "最大轮次", value: `${experimentRounds} 轮` },
           { label: "验证集", value: `${validationRatio}%` }
         ];

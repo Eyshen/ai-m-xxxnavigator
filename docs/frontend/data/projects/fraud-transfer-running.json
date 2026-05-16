@@ -1,25 +1,62 @@
 {
   "projectId": "fraud-transfer-running",
-  "name": "欺诈转账识别实验",
-  "status": "running",
-  "entryView": "running",
+  "name": "欺诈交易建模-04",
+  "status": "completed",
+  "entryView": "completed",
   "time": "刚刚",
-  "summary": "项目进行中，当前正在进行高风险交互特征验证与模型收益评估。",
+  "summary": "项目已完成，当前可查看候选模型并下载部署压缩包。",
   "dataset": {
     "name": "fraud-transfer-demo.csv",
     "rows": 300000,
     "columns": 61,
     "target": "is_fraud_transfer"
   },
-  "running": {
-    "currentStep": 1,
-    "activeLoopId": 2,
-    "overviewMetrics": [
-      { "label": "识别字段", "value": "61", "meta": "自动字段识别" },
-      { "label": "扫描样本", "value": "300,000", "meta": "交易样本规模" },
-      { "label": "成功 LOOP", "value": "2", "meta": "收益成立方案" },
-      { "label": "最佳 AUC", "value": "0.912", "meta": "当前最优模型" },
-      { "label": "结果项", "value": "6", "meta": "可追溯实验记录" }
+  "completed": {
+    "currentStep": 2,
+    "defaultSelectedModelId": "fraud-xgboost-v3",
+    "models": [
+      {
+        "modelId": "fraud-xgboost-v3",
+        "modelName": "XGBoost 欺诈识别模型",
+        "version": "v3.0.0",
+        "status": "recommended",
+        "primaryMetricName": "AUC",
+        "primaryMetricValue": 0.9274,
+        "ks": 0.7042,
+        "f1Score": 0.845,
+        "accuracy": 0.914,
+        "recall": 0.821,
+        "featureCount": 56,
+        "trainedAt": "2026-05-16 10:40",
+        "summary": "综合收益最佳，适合作为默认部署候选。",
+        "deploymentSummary": "对高风险交易交互特征和时序行为特征利用更充分，适合欺诈识别场景。",
+        "package": {
+          "packageName": "fraud-xgboost-v3.zip",
+          "downloadUrl": "/mock-model-packages/credit-risk-xgboost-v1.zip",
+          "sizeLabel": "1.3 MB"
+        }
+      },
+      {
+        "modelId": "fraud-lightgbm-v2",
+        "modelName": "LightGBM 欺诈识别模型",
+        "version": "v2.2.0",
+        "status": "available",
+        "primaryMetricName": "AUC",
+        "primaryMetricValue": 0.9188,
+        "ks": 0.6881,
+        "f1Score": 0.831,
+        "accuracy": 0.906,
+        "recall": 0.807,
+        "featureCount": 49,
+        "trainedAt": "2026-05-16 09:55",
+        "summary": "指标略低于推荐方案，但部署体积更小。",
+        "deploymentSummary": "适合需要更轻量服务资源占用的在线识别场景。",
+        "package": {
+          "packageName": "fraud-lightgbm-v2.zip",
+          "downloadUrl": "/mock-model-packages/credit-risk-lightgbm-v2.zip",
+          "sizeLabel": "1.0 MB"
+        }
+      }
     ]
   }
 }

@@ -113,10 +113,6 @@ export function CompletedProjectResult({
                 <strong>{formatMetric(selectedModel.primaryMetricValue)}</strong>
               </article>
               <article className="hero-metric">
-                <span>KS</span>
-                <strong>{formatMetric(selectedModel.ks)}</strong>
-              </article>
-              <article className="hero-metric">
                 <span>模型包</span>
                 <strong>{selectedModel.package.sizeLabel ?? selectedModel.package.packageName}</strong>
               </article>

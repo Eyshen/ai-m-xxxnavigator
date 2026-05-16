@@ -57,10 +57,6 @@ export function DeliveryPanel({
               </strong>
             </div>
             <div className="delivery-metric">
-              <span>最佳 KS</span>
-              <strong>{bestLoop.ks.toFixed(4)}</strong>
-            </div>
-            <div className="delivery-metric">
               <span>验证集比例</span>
               <strong>{validationRatio}%</strong>
             </div>
