@@ -35,6 +35,13 @@ export function DataIntakePanel({
   const hasFile = Boolean(state.uploadedFile);
   const canSubmit = hasFile && !state.isProcessing && configValid;
   const requirementReady = state.modelingRequirement.trim().length > 0;
+  const launchStatus = state.isProcessing
+    ? "解析中"
+    : canSubmit
+      ? "可启动"
+      : hasFile
+        ? "待补充需求"
+        : "待上传";
 
   let hint = "";
   if (state.isProcessing) {
@@ -55,137 +62,154 @@ export function DataIntakePanel({
 
   return (
     <section className="panel panel--intake">
-      <div className="panel__header">
-        <div>
+      <div className="intake-hero">
+        <div className="intake-hero__copy">
           <div className="panel__eyebrow">Step 01</div>
           <h2 className="panel__title">数据接入与建模输入</h2>
+          <p className="panel__desc">
+            先上传训练数据，再补充建模要求和实验边界。准备完成后，即可进入自动实验。
+          </p>
         </div>
-        <p className="panel__desc">
-          先上传训练数据，再补充建模要求和实验边界。准备完成后，即可进入自动实验。
-        </p>
+        <div className="intake-status-card">
+          <span className="intake-status-card__label">阶段状态</span>
+          <strong className="intake-status-card__value">{launchStatus}</strong>
+          <span className="intake-status-card__meta">
+            {canSubmit ? "启动条件已满足" : "按步骤完成准备后即可启动"}
+          </span>
+        </div>
       </div>
 
-      <div className="intake-priority">
+      <div className="intake-flow">
         <article
-          className={`intake-priority__item ${hasFile ? "intake-priority__item--done" : ""}`}
+          className={`intake-flow__item ${hasFile ? "intake-flow__item--done" : ""}`}
         >
-          <span className="intake-priority__step">第一步</span>
-          <strong className="intake-priority__title">上传训练数据</strong>
-          <span className="intake-priority__meta">
-            {hasFile
-              ? state.isProcessing
-                ? "字段结构解析中"
-                : `已上传 ${state.uploadedFile}`
-              : "上传文件并完成解析"}
-          </span>
-        </article>
-        <article
-          className={`intake-priority__item ${requirementReady ? "intake-priority__item--done" : ""}`}
-        >
-          <span className="intake-priority__step">第二步</span>
-          <strong className="intake-priority__title">补充建模要求</strong>
-          <span className="intake-priority__meta">
-            {requirementReady ? "需求已填写，可继续校验配置" : "说明目标、样本范围与交付口径"}
-          </span>
-        </article>
-        <article
-          className={`intake-priority__item ${canSubmit ? "intake-priority__item--done" : ""}`}
-        >
-          <span className="intake-priority__step">第三步</span>
-          <strong className="intake-priority__title">提交自动实验</strong>
-          <span className="intake-priority__meta">
-            {canSubmit ? "已满足启动条件" : "仍需完成上传或修正配置"}
-          </span>
-        </article>
-      </div>
-
-      <div className="intake-grid intake-grid--primary">
-        <article className="input-card input-card--dialogue">
-          <div className="input-card__header input-card__header--stack">
-            <div className="input-card__badge">
-              <Icon name="messageSquare" size={18} color="#eff8ff" />
-            </div>
-            <div className="input-card__body">
-              <div className="input-card__eyebrow">第二步</div>
-              <h3 className="input-card__title">请先描述本次建模要求</h3>
-              <p className="input-card__text">
-                用自然语言说明预测目标、样本范围、业务口径和交付要求，让后续实验输出更贴近实际场景。
-              </p>
-            </div>
+          <span className="intake-flow__step">01</span>
+          <div className="intake-flow__body">
+            <strong className="intake-flow__title">上传训练数据</strong>
+            <span className="intake-flow__meta">
+              {hasFile
+                ? state.isProcessing
+                  ? "字段结构解析中"
+                  : `已上传 ${state.uploadedFile}`
+                : "上传文件并完成解析"}
+            </span>
           </div>
-          <div className="input-card__body">
-            <textarea
-              className="input-textarea"
-              placeholder="例如：请基于客户交易、收入、存款和信用额度数据，建立信用卡逾期风险预测模型，重点识别未来30天可能逾期的高风险客户，并输出可解释的关键影响因素。"
-              value={state.modelingRequirement}
-              onChange={(event) => onRequirementChange(event.target.value)}
-            />
-            <div className="input-card__tip">
-              建议包含：预测目标、样本范围、评估指标、交付形式、解释要求。
+        </article>
+        <article
+          className={`intake-flow__item ${requirementReady ? "intake-flow__item--done" : ""}`}
+        >
+          <span className="intake-flow__step">02</span>
+          <div className="intake-flow__body">
+            <strong className="intake-flow__title">补充建模要求</strong>
+            <span className="intake-flow__meta">
+              {requirementReady ? "需求已填写，可继续校验配置" : "说明目标、样本范围与交付口径"}
+            </span>
+          </div>
+        </article>
+        <article
+          className={`intake-flow__item ${canSubmit ? "intake-flow__item--done" : ""}`}
+        >
+          <span className="intake-flow__step">03</span>
+          <div className="intake-flow__body">
+            <strong className="intake-flow__title">提交自动实验</strong>
+            <span className="intake-flow__meta">
+              {canSubmit ? "已满足启动条件" : "仍需完成上传或修正配置"}
+            </span>
+          </div>
+        </article>
+      </div>
+
+      <div className="intake-workbench">
+        <div className="intake-workbench__main">
+          <article className="input-card input-card--spotlight">
+            <div className="input-card__header">
+              <div className="input-card__icon intake-card__icon intake-card__icon--upload">
+                <Icon name="upload" size={22} color="#dff7ff" />
+              </div>
+              <div>
+                <div className="input-card__eyebrow">第一步</div>
+                <h3 className="input-card__title">上传训练数据并等待结构解析</h3>
+                <p className="input-card__text">
+                  先把数据放进来，解析成功后会进入可提交状态，适合快速完成首轮实验准备。
+                </p>
+              </div>
             </div>
-            <button
-              className="inline-link"
-              type="button"
-              onClick={() => onRequirementChange(templateToUse)}
-            >
-              填入推荐示例
-            </button>
             {hasFile && !state.isProcessing ? (
-              <div className="inline-success">
-                数据已解析，可提交需求进入多轮自动实验。
+              <div className="upload-card__chips">
+                <span className="upload-card__chip upload-card__chip--success">
+                  上传文件并解析成功
+                </span>
               </div>
             ) : null}
-          </div>
-        </article>
+            <label className={`dropzone ${state.isProcessing ? "dropzone--busy" : ""}`}>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls,.json"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    onFileUpload(file.name);
+                  }
+                }}
+              />
+              <div className="dropzone__icon">
+                <Icon name="upload" size={30} color="#8fd4ff" />
+              </div>
+              <div className="dropzone__title">
+                {state.uploadedFile ? `已上传: ${state.uploadedFile}` : "点击上传或拖拽文件到此处"}
+              </div>
+              <div className="dropzone__subtitle">
+                支持 CSV、Excel、JSON 格式
+              </div>
+            </label>
+          </article>
 
-        <article className="upload-card upload-card--primary">
-          <div className="input-card__header">
-            <div className="input-card__icon">
-              <Icon name="upload" size={20} color="#1f6fff" />
+          <article className="input-card input-card--dialogue input-card--workspace">
+            <div className="input-card__header input-card__header--stack">
+              <div className="input-card__badge intake-card__icon intake-card__icon--copy">
+                <Icon name="messageSquare" size={18} color="#eff8ff" />
+              </div>
+              <div className="input-card__body">
+                <div className="input-card__eyebrow">第二步</div>
+                <h3 className="input-card__title">请先描述本次建模要求</h3>
+                <p className="input-card__text">
+                  用自然语言说明预测目标、样本范围、业务口径和交付要求，让后续实验输出更贴近实际场景。
+                </p>
+              </div>
             </div>
-            <div>
-              <div className="input-card__eyebrow">第一步</div>
-              <h3 className="input-card__title">上传训练数据并等待结构解析</h3>
-              <p className="input-card__text">
-                先把数据放进来，解析成功后会进入可提交状态，适合快速完成首轮实验准备。
-              </p>
+            <div className="input-card__body">
+              <textarea
+                className="input-textarea input-textarea--workspace"
+                placeholder="例如：请基于客户交易、收入、存款和信用额度数据，建立信用卡逾期风险预测模型，重点识别未来30天可能逾期的高风险客户，并输出可解释的关键影响因素。"
+                value={state.modelingRequirement}
+                onChange={(event) => onRequirementChange(event.target.value)}
+              />
+              <div className="input-card__tip">
+                建议包含：预测目标、样本范围、评估指标、交付形式、解释要求。
+              </div>
+              <div className="intake-workspace__footer">
+                <button
+                  className="btn btn--secondary intake-workspace__template"
+                  type="button"
+                  onClick={() => onRequirementChange(templateToUse)}
+                >
+                  填入推荐示例
+                </button>
+                {hasFile && !state.isProcessing ? (
+                  <div className="inline-success">
+                    数据已解析，可提交需求进入多轮自动实验。
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-          {hasFile && !state.isProcessing ? (
-            <div className="upload-card__chips">
-              <span className="upload-card__chip upload-card__chip--success">
-                上传文件并解析成功
-              </span>
-            </div>
-          ) : null}
-          <label className={`dropzone ${state.isProcessing ? "dropzone--busy" : ""}`}>
-            <input
-              type="file"
-              accept=".csv,.xlsx,.xls,.json"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) {
-                  onFileUpload(file.name);
-                }
-              }}
-            />
-            <div className="dropzone__icon">
-              <Icon name="upload" size={30} color="#8fd4ff" />
-            </div>
-            <div className="dropzone__title">
-              {state.uploadedFile ? `已上传: ${state.uploadedFile}` : "点击上传或拖拽文件到此处"}
-            </div>
-            <div className="dropzone__subtitle">
-              支持 CSV、Excel、JSON 格式
-            </div>
-          </label>
-        </article>
-      </div>
+          </article>
+        </div>
 
-      <article className="input-card input-card--config">
+        <aside className="intake-workbench__aside">
+          <article className="input-card input-card--config input-card--parameter">
           <div className="input-card__header">
-            <div className="input-card__icon">
-              <Icon name="settings" size={20} color="#1f6fff" />
+            <div className="input-card__icon intake-card__icon intake-card__icon--config">
+              <Icon name="settings" size={20} color="#dff7ff" />
             </div>
             <div>
               <div className="input-card__eyebrow">第三步前确认</div>
@@ -256,7 +280,9 @@ export function DataIntakePanel({
             当前将优先优化 {state.optimizationMetric} {state.optimizationTarget.toFixed(2)}，
             并保留每一轮实验的假设、证据和指标变化。
           </div>
-      </article>
+          </article>
+        </aside>
+      </div>
 
       {state.isProcessing ? (
         <div className="loading-box">
@@ -265,7 +291,7 @@ export function DataIntakePanel({
         </div>
       ) : null}
 
-      <div className="submit-bar">
+      <div className="submit-bar submit-bar--launchpad">
         <p className="submit-bar__hint">{hint}</p>
         <button
           className="btn btn--primary"

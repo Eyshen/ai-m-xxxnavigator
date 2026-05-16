@@ -128,7 +128,7 @@ export function CompletedProjectResult({
             <div className="deploy-guide__header">
               <div>
                 <div className="deploy-guide__eyebrow">模型部署说明</div>
-                <h3 className="deploy-guide__title">简单部署步骤</h3>
+                <h3 className="deploy-guide__title">部署步骤</h3>
               </div>
               <div className="deploy-guide__badge">服务器部署</div>
             </div>
