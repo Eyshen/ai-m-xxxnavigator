@@ -180,7 +180,7 @@ export function DataIntakePanel({
             <div className="input-card__body">
               <textarea
                 className="input-textarea input-textarea--workspace"
-                placeholder="例如：请基于客户交易、收入、存款和信用额度数据，建立信用卡逾期风险预测模型，重点识别未来30天可能逾期的高风险客户，并输出可解释的关键影响因素。"
+                placeholder="例如：基于多维度用户行为数据——包括交易时间规律、支付卡号特征、注册邮箱信息及终端设备指纹等——构建高精度欺诈风险预测模型。模型通过深度挖掘交易行为模式与异常特征，对每笔交易进行实时风险评估，输出唯一交易编号（Transaction ID）及其对应的欺诈概率值（Fraud Probability，范围0~1）。"
                 value={state.modelingRequirement}
                 onChange={(event) => onRequirementChange(event.target.value)}
               />

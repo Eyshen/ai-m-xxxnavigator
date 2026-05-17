@@ -17,7 +17,6 @@ interface ExperimentWorkspaceProps {
   playbackLoops?: RunningPlaybackLoopItem[];
   reviewMode?: boolean;
   playbackComplete?: boolean;
-  playbackPaused?: boolean;
   canShowFocusedDetails?: boolean;
   currentModelLoop?: ExperimentLoop;
   currentModelComplete?: boolean;
@@ -27,7 +26,6 @@ interface ExperimentWorkspaceProps {
   onChangeView: (view: FrontendAppState["experimentView"]) => void;
   onToggleSuccessful: () => void;
   onSelectLoop: (loopId: number) => void;
-  onTogglePlayback?: () => void;
   onJumpToCurrentLoop?: () => void;
   onToggleExperiment: (experimentId: string) => void;
   onAddLoop: () => void;
@@ -67,7 +65,6 @@ export function ExperimentWorkspace({
   playbackLoops,
   reviewMode = false,
   playbackComplete = false,
-  playbackPaused = false,
   canShowFocusedDetails = true,
   currentModelLoop,
   currentModelComplete = true,
@@ -77,7 +74,6 @@ export function ExperimentWorkspace({
   onChangeView,
   onToggleSuccessful,
   onSelectLoop,
-  onTogglePlayback,
   onJumpToCurrentLoop,
   onToggleExperiment,
   onAddLoop,
@@ -146,27 +142,6 @@ export function ExperimentWorkspace({
         </div>
       </div>
 
-      <div className={`status-banner ${shouldEarlyStop ? "status-banner--success" : ""}`}>
-        <span className="status-banner__title">
-          {hasLivePlayback && playbackPaused
-            ? "自动回放已暂停，可先查看已完成实验"
-            : !bestLoop
-              ? "当前 Loop 生成中"
-              : shouldEarlyStop
-                ? "已达到目标，可提前结束实验"
-                : "实验仍在搜索更优方案"}
-        </span>
-        <span className="status-banner__text">
-          {hasLivePlayback && playbackPaused
-            ? "你可以切换已完成的 Loop 查看细节，继续回放后会恢复自动推进。"
-            : !bestLoop
-              ? `当前暂无已完成实验结果，${heroLoop.name} 完成后将更新最佳 ${state.optimizationMetric}。`
-              : shouldEarlyStop
-                ? `当前最佳 ${state.optimizationMetric} 为 ${bestLoop.auc.toFixed(4)}，已满足本次演示目标。`
-                : `当前最多运行 ${state.experimentRounds} 轮，若后续收益不足可保持当前最佳方案。`}
-        </span>
-      </div>
-
       <div className="toolbar">
         <div className="toggle-group">
           <button
@@ -200,12 +175,6 @@ export function ExperimentWorkspace({
         </div>
 
         <div className="toolbar__actions">
-          {hasLivePlayback ? (
-            <button className="btn btn--ghost" onClick={onTogglePlayback} type="button">
-              <Icon name={playbackPaused ? "play" : "clock"} size={14} color="#6c6258" />
-              {playbackPaused ? "继续回放" : "暂停回放"}
-            </button>
-          ) : null}
           {hasLivePlayback && !selectedRunningLoop ? (
             <button className="btn btn--ghost" onClick={onJumpToCurrentLoop} type="button">
               <Icon name="zap" size={14} color="#6c6258" />

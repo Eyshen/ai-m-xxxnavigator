@@ -147,6 +147,8 @@ const PLAYBACK_PHASES = [
 
 type PlaybackPhase = (typeof PLAYBACK_PHASES)[number];
 
+const FIRST_LOOP_COMPLETION_DELAY_MS = 10 * 60 * 1000;
+
 export function WorkspacePage() {
   const [state, setState] = useState<FrontendAppState>(initialAppState);
   const [projects, setProjects] = useState<FrontendProject[]>(getInitialEditableProjects());
@@ -221,6 +223,9 @@ export function WorkspacePage() {
       return;
     }
 
+    const isFirstLoopCompletionHold =
+      playbackState.activeLoopIndex === 0 && playbackState.phase === "completed_hold";
+
     const timer = window.setTimeout(() => {
       setPlaybackState((current) => {
         if (!current) return current;
@@ -280,13 +285,15 @@ export function WorkspacePage() {
           playbackComplete: false
         };
       });
-    }, playbackState.phase === "steps"
-      ? 900
-      : playbackState.phase === "completed_hold"
-        ? playbackState.activeLoopIndex === state.experimentLoops.length - 1
-          ? 1600
-          : 900
-        : 700);
+    }, isFirstLoopCompletionHold
+      ? FIRST_LOOP_COMPLETION_DELAY_MS
+      : playbackState.phase === "steps"
+        ? 900
+        : playbackState.phase === "completed_hold"
+          ? playbackState.activeLoopIndex === state.experimentLoops.length - 1
+            ? 1600
+            : 900
+          : 700);
 
     return () => window.clearTimeout(timer);
   }, [project.status, playbackState, state.experimentLoops]);
@@ -321,11 +328,16 @@ export function WorkspacePage() {
     project.status === "running" && playbackState
       ? state.experimentLoops[playbackState.activeLoopIndex] ?? null
       : null;
+  const isFirstLoopCompletionHold =
+    project.status === "running" &&
+    playbackState?.activeLoopIndex === 0 &&
+    playbackState?.phase === "completed_hold" &&
+    !playbackState?.playbackComplete;
   const currentLoopCompleted =
     project.status !== "running" ||
     !playbackState ||
     playbackState.playbackComplete ||
-    playbackState.phase === "completed_hold" ||
+    (playbackState.phase === "completed_hold" && !isFirstLoopCompletionHold) ||
     playbackState.phase === "done";
   const revealedLoopCount =
     project.status === "running" && playbackState
@@ -357,7 +369,6 @@ export function WorkspacePage() {
               playbackState &&
                 index === playbackState.activeLoopIndex &&
                 !playbackState.playbackComplete &&
-                playbackState.phase !== "completed_hold" &&
                 playbackState.phase !== "done"
             );
           if (!isVisible) {
@@ -735,7 +746,6 @@ export function WorkspacePage() {
               )}
               playbackLoops={visiblePlaybackLoops}
               playbackComplete={playbackComplete}
-              playbackPaused={playbackPaused}
               canShowFocusedDetails={canShowFocusedDetails}
               currentModelLoop={
                 !playbackComplete && viewingCurrentRunningLoop ? currentPlaybackLoop ?? undefined : undefined
@@ -753,31 +763,6 @@ export function WorkspacePage() {
                   successfulOnly: !current.successfulOnly,
                   expandedExperimentId: null
                 }))
-              }
-              onTogglePlayback={() =>
-                setPlaybackState((current) => {
-                  if (!current) return current;
-                  const nextPaused = !current.paused;
-                  if (!nextPaused) {
-                    const activeLoopId = state.experimentLoops[current.activeLoopIndex]?.id ?? state.activeLoopId;
-                    setState((existing) => ({
-                      ...existing,
-                      activeLoopId,
-                      experimentView: "process",
-                      expandedExperimentId: null
-                    }));
-                    return {
-                      ...current,
-                      paused: false,
-                      manualSelectedLoopId: null
-                    };
-                  }
-
-                  return {
-                    ...current,
-                    paused: true
-                  };
-                })
               }
               onSelectLoop={(loopId) => {
                 setState((current) => ({
@@ -901,7 +886,6 @@ export function WorkspacePage() {
               loopLogs={completedExperimentLogs}
               reviewMode
               playbackComplete
-              playbackPaused={false}
               canShowFocusedDetails
               bestLoop={bestLoop}
               completedLoopCount={state.experimentLoops.length}
@@ -916,7 +900,6 @@ export function WorkspacePage() {
                   expandedExperimentId: null
                 }))
               }
-              onTogglePlayback={() => {}}
               onSelectLoop={(loopId) =>
                 setState((current) => ({
                   ...current,
